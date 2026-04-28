@@ -6,9 +6,25 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      const isLocalDevOrigin =
+        process.env.NODE_ENV !== 'production' &&
+        !!origin &&
+        /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+
+      if (!origin || configuredOrigins.includes(origin) || isLocalDevOrigin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
   });
 
