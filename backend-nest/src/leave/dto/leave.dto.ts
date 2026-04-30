@@ -10,7 +10,6 @@ export class SubmitLeaveDto {
   @ApiProperty() @IsString() startDate: string;
   @ApiProperty() @IsString() endDate: string;
   @ApiProperty({ required: false }) @IsString() @IsOptional() reason?: string;
-  @ApiProperty({ required: false }) @IsString() @IsOptional() teacherId?: string;
 }
 
 export class ReviewLeaveDto {

@@ -23,6 +23,7 @@ export default function CreateTaskPage() {
   const [remarks, setRemarks] = useState('');
   const [scope, setScope] = useState('individual');
   const [selectedTeachers, setSelectedTeachers] = useState([]);
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -70,18 +71,17 @@ export default function CreateTaskPage() {
     setSaving(true);
     try {
       const assignees = getAssignees();
-      await createTask(
-        {
-          title: title.trim(),
-          description: description.trim(),
-          priority,
-          startDate,
-          dueDate,
-          remarks: remarks.trim(),
-          createdByName: user?.name || user?.displayName || user?.email,
-        },
-        assignees
-      );
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('description', description.trim());
+      formData.append('priority', priority);
+      formData.append('startDate', startDate);
+      formData.append('dueDate', dueDate);
+      formData.append('remarks', remarks.trim());
+      formData.append('createdByName', user?.name || user?.displayName || user?.email);
+      if (file) formData.append('file', file);
+
+      await createTask(formData, assignees);
       navigate('/tasks');
     } catch (err) {
       console.error(err);
@@ -200,6 +200,32 @@ export default function CreateTaskPage() {
               placeholder="Any additional notes..."
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Attachment (PDF only, max 5MB)</label>
+            <div className="mt-1 flex items-center gap-4">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setFile(e.target.files[0])}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-lg file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-emerald-50 file:text-emerald-700
+                  hover:file:bg-emerald-100"
+              />
+              {file && (
+                <button
+                  type="button"
+                  onClick={() => setFile(null)}
+                  className="text-xs text-red-500 hover:text-red-700 underline"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

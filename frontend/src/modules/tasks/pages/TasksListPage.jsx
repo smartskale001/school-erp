@@ -7,6 +7,8 @@ import {
   getAssignmentsForTeacher,
   updateAssignmentStatus,
   cancelTask,
+  cancelTaskAll,
+  cancelAssignment,
   checkAndMarkOverdueTasks,
 } from '@/modules/tasks/services/tasksFirebaseService';
 import teachersData from '@/data/teachers.json';
@@ -60,6 +62,8 @@ export default function TasksListPage() {
   const [filterPriority, setFilterPriority] = useState('all');
   const [search, setSearch] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [cancelModal, setCancelModal] = useState({ open: false, assignmentId: null, taskId: null, teacherName: '' });
+
 
   const resolveTeacherId = () => {
     if (teacherId) return teacherId;
@@ -109,11 +113,36 @@ export default function TasksListPage() {
     setUpdatingId(null);
   };
 
-  const handleCancel = async (taskId) => {
-    if (!window.confirm('Cancel this task for all assignees?')) return;
-    await cancelTask(taskId);
-    await load();
+  const handleCancelClick = (assignment) => {
+    const teacher = teachersData.find(t => t.id === assignment.teacherId);
+    setCancelModal({
+      open: true,
+      assignmentId: assignment.id,
+      taskId: assignment.taskId,
+      teacherName: teacher?.name || 'this teacher'
+    });
   };
+
+  const handleCancelSingle = async () => {
+    try {
+      await cancelAssignment(cancelModal.assignmentId);
+      setCancelModal({ open: false, assignmentId: null, taskId: null, teacherName: '' });
+      await load();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCancelAll = async () => {
+    try {
+      await cancelTaskAll(cancelModal.taskId);
+      setCancelModal({ open: false, assignmentId: null, taskId: null, teacherName: '' });
+      await load();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   const filtered = items.filter((a) => {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
@@ -229,6 +258,18 @@ export default function TasksListPage() {
                     <div className="text-xs text-gray-500 mt-1 line-clamp-1">
                       {a.task?.description}
                     </div>
+                    {a.task?.fileUrl && (
+                      <div className="mt-2">
+                        <a
+                          href={a.task.fileUrl.startsWith('http') ? a.task.fileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:4000'}${a.task.fileUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-2 py-1 rounded"
+                        >
+                          View PDF Attachment
+                        </a>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
                       {canManageAllTasks && teacher && (
                         <span className="flex items-center gap-1">
@@ -262,7 +303,7 @@ export default function TasksListPage() {
                     )}
                     {canManageAllTasks && a.status !== 'cancelled' && a.status !== 'completed' && (
                       <button
-                        onClick={() => handleCancel(a.taskId)}
+                        onClick={() => handleCancelClick(a)}
                         className="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-200 rounded hover:bg-red-50"
                       >
                         Cancel
@@ -275,6 +316,38 @@ export default function TasksListPage() {
           </div>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {cancelModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Cancel Task</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Would you like to cancel this task for <strong>{cancelModal.teacherName}</strong> specifically, or for <strong>everyone</strong> assigned to it?
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={handleCancelSingle}
+                className="w-full py-2.5 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+              >
+                Cancel for {cancelModal.teacherName} only
+              </button>
+              <button
+                onClick={handleCancelAll}
+                className="w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Cancel for Everyone
+              </button>
+              <button
+                onClick={() => setCancelModal({ open: false, assignmentId: null, taskId: null, teacherName: '' })}
+                className="w-full py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LeaveApplicationEntity, LeaveStatus } from '../database/entities/leave-application.entity';
 import { ProxyAssignmentEntity, ProxyStatus } from '../database/entities/proxy-assignment.entity';
+import { TeacherEntity } from '../database/entities/teacher.entity';
 import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto } from './dto/leave.dto';
 import { Role } from '../common/enums/role.enum';
 
@@ -15,17 +16,27 @@ export class LeaveService {
     private leaveRepo: Repository<LeaveApplicationEntity>,
     @InjectRepository(ProxyAssignmentEntity)
     private proxyRepo: Repository<ProxyAssignmentEntity>,
+    @InjectRepository(TeacherEntity)
+    private teacherRepo: Repository<TeacherEntity>,
   ) {}
+
+  private async getTeacherId(user: any): Promise<string> {
+    if (user.teacherId) return user.teacherId;
+    const teacher = await this.teacherRepo.findOne({ where: { email: user.email } });
+    if (teacher) return teacher.id;
+    return user.id;
+  }
 
   // ─── Leave ────────────────────────────────────────────────────────────────
 
-  async findAll(user: CurrentUser) {
+  async findAll(user: any) {
     const isPrivileged = [Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR].includes(user.role);
     if (isPrivileged) {
       return this.leaveRepo.find({ order: { submittedAt: 'DESC' } });
     }
+    const teacherId = await this.getTeacherId(user);
     return this.leaveRepo.find({
-      where: { teacherId: user.teacherId },
+      where: { teacherId },
       order: { submittedAt: 'DESC' },
     });
   }
@@ -36,9 +47,8 @@ export class LeaveService {
     return leave;
   }
 
-  async submit(dto: SubmitLeaveDto, user: CurrentUser) {
-    const teacherId = dto.teacherId || user.teacherId;
-    if (!teacherId) throw new ForbiddenException('Teacher ID required');
+  async submit(dto: SubmitLeaveDto, user: any) {
+    const teacherId = await this.getTeacherId(user);
     const entity = this.leaveRepo.create({
       teacherId,
       leaveType: dto.leaveType,
@@ -47,7 +57,7 @@ export class LeaveService {
       reason: dto.reason,
       status: LeaveStatus.PENDING,
       submittedAt: new Date(),
-      schoolId: 'school_001',
+      schoolId: user.schoolId || 'school_001',
     });
     return this.leaveRepo.save(entity);
   }

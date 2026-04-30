@@ -59,6 +59,7 @@ export class TasksService {
       createdBy: user.id,
       createdByName: dto.createdByName || null,
       status: TaskStatus.PENDING,
+      fileUrl: dto.fileUrl || null,
       schoolId: 'school_001',
     });
     const saved = await this.taskRepo.save(task);
@@ -98,6 +99,18 @@ export class TasksService {
     await this.assignmentRepo.update({ taskId: id }, { status: TaskAssignmentStatus.CANCELLED });
     return task;
   }
+
+  async cancelAssignment(id: string, user: CurrentUser) {
+    const assignment = await this.assignmentRepo.findOne({ where: { id } });
+    if (!assignment) throw new NotFoundException('Assignment not found');
+    
+    const isPrivileged = [Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR].includes(user.role);
+    if (!isPrivileged) throw new ForbiddenException('Only staff can cancel assignments');
+
+    await this.assignmentRepo.update(id, { status: TaskAssignmentStatus.CANCELLED });
+    return this.assignmentRepo.findOne({ where: { id } });
+  }
+
 
   // ─── Assignments ─────────────────────────────────────────────────────────
 

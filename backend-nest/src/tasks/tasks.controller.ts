@@ -1,7 +1,10 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, UseGuards, HttpCode, HttpStatus,
+  UseInterceptors, UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto, UpdateTaskDto, UpdateAssignmentStatusDto } from './dto/tasks.dto';
@@ -44,7 +47,30 @@ export class TasksController {
   @UseGuards(RolesGuard)
   @MinRole(Role.COORDINATOR)
   @ApiOperation({ summary: 'Create task and assignments (coordinator+)' })
-  create(@Body() dto: CreateTaskDto, @CurrentUser() user: any) {
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        cb(null, uniqueName);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.includes('pdf')) {
+        return cb(new Error('Only PDF files are allowed'), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  }))
+  create(
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: any,
+    @UploadedFile() file?: any,
+  ) {
+    if (file) {
+      dto.fileUrl = `/uploads/${file.filename}`;
+    }
     return this.svc.createTask(dto, user);
   }
 
@@ -55,10 +81,23 @@ export class TasksController {
   }
 
   @Patch(':id/cancel')
-  @ApiOperation({ summary: 'Cancel task (creator or admin)' })
+  @ApiOperation({ summary: 'Cancel task (global — creator or admin)' })
   cancel(@Param('id') id: string, @CurrentUser() user: any) {
     return this.svc.cancelTask(id, user);
   }
+
+  @Patch(':id/cancel-all')
+  @ApiOperation({ summary: 'Cancel task for all assignees (alias for global cancel)' })
+  cancelAll(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.cancelTask(id, user);
+  }
+
+  @Patch('assignments/:id/cancel')
+  @ApiOperation({ summary: 'Cancel single assignment (staff)' })
+  cancelSingle(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.cancelAssignment(id, user);
+  }
+
 
   @Patch('assignments/:assignmentId/status')
   @ApiOperation({ summary: 'Update assignment status (assigned teacher or admin)' })

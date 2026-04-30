@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
   },
   leave: {
     list: '/leave',
+    my: '/leave/my',
     get: (id) => `/leave/${id}`,
     submit: '/leave',
     approve: (id) => `/leave/${id}/approve`,
@@ -102,5 +103,8 @@ export const API_ENDPOINTS = {
     get: (id) => `/reports/${id}`,
     create: '/reports',
     remove: (id) => `/reports/${id}`,
+    substitution: (date) => `/reports/substitution?date=${date}`,
+    pendingTasks: '/reports/tasks/pending',
+    overdueTasks: '/reports/tasks/overdue',
   },
 };

@@ -43,7 +43,6 @@ export default function LeaveApplicationPage() {
     setSaving(true);
     try {
       await submitLeaveApplication({
-        teacherId: teacher?.id || user?.uid,
         leaveType,
         startDate,
         endDate,

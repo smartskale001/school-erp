@@ -18,8 +18,7 @@ export async function getLeaveApplications() {
 }
 
 export async function getLeaveApplicationsForTeacher(_teacherId) {
-  // Backend filters by JWT — param ignored
-  return apiRequest(API_ENDPOINTS.leave.list);
+  return apiRequest(API_ENDPOINTS.leave.my);
 }
 
 export async function approveLeave(leaveId, approvedBy) {

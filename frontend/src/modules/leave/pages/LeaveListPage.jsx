@@ -49,12 +49,8 @@ export default function LeaveListPage() {
       if (canApprove) {
         setLeaves(await getLeaveApplications());
       } else {
-        const teacher = teachersData.find(
-          (t) => t.name === user?.displayName || t.email === user?.email
-        );
-        if (teacher) {
-          setLeaves(await getLeaveApplicationsForTeacher(teacher.id));
-        }
+        // Fetch personal leaves for teachers
+        setLeaves(await getLeaveApplicationsForTeacher());
       }
     } catch (e) { console.error(e); }
     setLoading(false);

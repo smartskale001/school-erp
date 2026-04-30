@@ -7,6 +7,7 @@ import {
   getAssignmentsForTask,
   updateAssignmentStatus,
   cancelTask,
+  cancelAssignment,
 } from '@/modules/tasks/services/tasksFirebaseService';
 import teachersData from '@/data/teachers.json';
 
@@ -62,6 +63,17 @@ export default function TaskDetailPage() {
     await cancelTask(taskId);
     navigate('/tasks');
   };
+
+  const handleCancelAssignment = async (assignmentId) => {
+    if (!window.confirm('Cancel this assignment for this specific teacher?')) return;
+    try {
+      await cancelAssignment(assignmentId);
+      await load();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -133,6 +145,20 @@ export default function TaskDetailPage() {
             <span className="font-medium">Remarks:</span> {task.remarks}
           </div>
         )}
+
+        {task.fileUrl && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Attachment:</span>
+            <a
+              href={task.fileUrl.startsWith('http') ? task.fileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:4000'}${task.fileUrl}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
+            >
+              View PDF Document
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
@@ -190,7 +216,16 @@ export default function TaskDetailPage() {
                       ))}
                     </select>
                   )}
+                  {canManageAllTasks && a.status !== 'cancelled' && a.status !== 'completed' && (
+                    <button
+                      onClick={() => handleCancelAssignment(a.id)}
+                      className="text-[10px] text-red-500 hover:text-red-700 px-1.5 py-0.5 border border-red-100 rounded hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
+
               </div>
             );
           })}

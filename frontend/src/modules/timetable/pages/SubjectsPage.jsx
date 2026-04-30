@@ -79,13 +79,13 @@ export default function SubjectsPage() {
         prev.map((s) =>
           s.id === editingId
             ? {
-                ...s,
-                name: name.trim(),
-                shortName: shortName.trim() || autoShortName(name.trim()),
-                difficulty: Number(difficulty),
-                availability: Number(availability),
-                classes: subjectClasses,
-              }
+              ...s,
+              name: name.trim(),
+              shortName: shortName.trim() || autoShortName(name.trim()),
+              difficulty: Number(difficulty),
+              availability: Number(availability),
+              classes: subjectClasses,
+            }
             : s
         )
       );
@@ -184,199 +184,199 @@ export default function SubjectsPage() {
             description="Manage subjects and their availability"
             action={
               <div className="flex items-center gap-2">
-            <input
-              ref={importRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <Button variant="outline" className="flex items-center gap-2" onClick={handleImportClick}>
-              Import
-            </Button>
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus size={16} /> Add Subject
+                <input
+                  ref={importRef}
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                <Button variant="outline" className="flex items-center gap-2" onClick={handleImportClick}>
+                  Import
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-white border border-gray-200 shadow-xl">
-                <DialogHeader>
-                  <DialogTitle>{editingId ? "Edit Subject" : "Add Subject"}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Name</label>
-                      <Input
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          if (!shortName) setShortName(autoShortName(e.target.value));
-                        }}
-                        placeholder="e.g., Mathematics"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Short Name</label>
-                      <Input
-                        type="text"
-                        value={shortName}
-                        onChange={(e) => setShortName(e.target.value)}
-                        placeholder="Auto-generated"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Difficulty (1-10)</label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={difficulty}
-                        onChange={(e) => setDifficulty(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Availability (periods)</label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={availability}
-                        onChange={(e) => setAvailability(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Classes Taught In</label>
-                  <div className="flex flex-wrap gap-2">
-                    {classesData.map((c) => (
-                      <label key={c.class} className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={subjectClasses.includes(c.class)}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setSubjectClasses([...subjectClasses, c.class]);
-                            } else {
-                              setSubjectClasses(subjectClasses.filter(cls => cls !== c.class));
-                            }
-                          }}
-                        />
-                        {c.class}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button" onClick={resetForm}>
-                      Cancel
+                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus size={16} /> Add Subject
                     </Button>
-                  </DialogClose>
-                  <Button type="button" onClick={handleSave} disabled={!name.trim()}>
-                    {editingId ? "Save Changes" : "Save Subject"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="bg-white border border-gray-200 shadow-xl">
+                    <DialogHeader>
+                      <DialogTitle>{editingId ? "Edit Subject" : "Add Subject"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Name</label>
+                          <Input
+                            type="text"
+                            value={name}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              if (!shortName) setShortName(autoShortName(e.target.value));
+                            }}
+                            placeholder="e.g., Mathematics"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Short Name</label>
+                          <Input
+                            type="text"
+                            value={shortName}
+                            onChange={(e) => setShortName(e.target.value)}
+                            placeholder="Auto-generated"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Difficulty (1-10)</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Availability (periods)</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={availability}
+                            onChange={(e) => setAvailability(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Classes Taught In</label>
+                      <div className="flex flex-wrap gap-2">
+                        {classesData.map((c) => (
+                          <label key={c.class} className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={subjectClasses.includes(c.class)}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setSubjectClasses([...subjectClasses, c.class]);
+                                } else {
+                                  setSubjectClasses(subjectClasses.filter(cls => cls !== c.class));
+                                }
+                              }}
+                            />
+                            {c.class}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline" type="button" onClick={resetForm}>
+                          Cancel
+                        </Button>
+                      </DialogClose>
+                      <Button type="button" onClick={handleSave} disabled={!name.trim()}>
+                        {editingId ? "Save Changes" : "Save Subject"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            }
+          />
+
+          <div className="mb-4 max-w-md">
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search subjects..."
+            />
           </div>
-        }
-      />
 
-      <div className="mb-4 max-w-md">
-        <Input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search subjects..."
-        />
-      </div>
-
-      <Card className="p-0 overflow-hidden">
-        <div className="grid grid-cols-[2fr_1fr_1.5fr_1.8fr_1.5fr] gap-4 px-4 py-3 border-b text-sm font-semibold text-gray-700">
-          <div>Name</div>
-          <div>Short Name</div>
-          <div>Difficulty</div>
-          <div>Availability</div>
-          <div>Actions</div>
-        </div>
-        <div className="divide-y">
-          {filtered.map((s) => (
-            <div key={s.id} className="grid grid-cols-[2fr_1fr_1.5fr_1.8fr_1.5fr] gap-4 px-4 py-3 text-sm items-center">
-              <div className="flex items-center gap-3">
-                <div
-                  className={
-                    "w-10 h-10 rounded-xl border flex items-center justify-center " +
-                    getSubjectBadge(s.name).containerClass
-                  }
-                >
-                  {getSubjectBadge(s.name).icon}
-                </div>
-                <div className="font-medium text-gray-900">{s.name}</div>
-              </div>
-              <div className="text-gray-700">
-                <span className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                  {s.shortName}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <DifficultyBar value={Number(s.difficulty) || 0} />
-                <span className="text-gray-500">{Number(s.difficulty) || 0}/10</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Select
-                  value={String(Number(s.availability) || 0)}
-                  onValueChange={(val) => handleAvailabilityChange(s.id, val)}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availabilityOptions.map((opt) => (
-                      <SelectItem key={opt} value={String(opt)}>
-                        {opt} periods
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <span className="text-emerald-600 font-medium">
-                  {Number(s.availability) || 0} periods
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  onClick={() => handleEdit(s)}
-                >
-                  <Pencil size={14} /> Edit
-                </button>
-                <button
-                  type="button"
-                  className="text-gray-600 hover:text-gray-700 flex items-center gap-1"
-                  onClick={() => handleClone(s)}
-                >
-                  <Copy size={14} /> Clone
-                </button>
-                <button
-                  type="button"
-                  className="text-red-600 hover:text-red-700 flex items-center gap-1"
-                  onClick={() => handleDelete(s.id)}
-                >
-                  <Trash2 size={14} /> Delete
-                </button>
-              </div>
+          <Card className="p-0 overflow-hidden">
+            <div className="grid grid-cols-[2fr_1fr_1.5fr_1.8fr_1.5fr] gap-4 px-4 py-3 border-b text-sm font-semibold text-gray-700">
+              <div>Name</div>
+              <div>Short Name</div>
+              <div>Difficulty</div>
+              <div>Availability</div>
+              <div>Actions</div>
             </div>
-          ))}
-          {!filtered.length ? (
-            <div className="px-4 py-6 text-sm text-gray-500">No subjects found.</div>
-          ) : null}
-        </div>
-      </Card>
+            <div className="divide-y">
+              {filtered.map((s) => (
+                <div key={s.id} className="grid grid-cols-[2fr_1fr_1.5fr_1.8fr_1.5fr] gap-4 px-4 py-3 text-sm items-center">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={
+                        "w-10 h-10 rounded-xl border flex items-center justify-center " +
+                        getSubjectBadge(s.name).containerClass
+                      }
+                    >
+                      {getSubjectBadge(s.name).icon}
+                    </div>
+                    <div className="font-medium text-gray-900">{s.name}</div>
+                  </div>
+                  <div className="text-gray-700">
+                    <span className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                      {s.shortName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <DifficultyBar value={Number(s.difficulty) || 0} />
+                    <span className="text-gray-500">{Number(s.difficulty) || 0}/10</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={String(Number(s.availability) || 0)}
+                      onValueChange={(val) => handleAvailabilityChange(s.id, val)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availabilityOptions.map((opt) => (
+                          <SelectItem key={opt} value={String(opt)}>
+                            {opt} periods
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-emerald-600 font-medium">
+                      {Number(s.availability) || 0} periods
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      onClick={() => handleEdit(s)}
+                    >
+                      <Pencil size={14} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-gray-600 hover:text-gray-700 flex items-center gap-1"
+                      onClick={() => handleClone(s)}
+                    >
+                      <Copy size={14} /> Clone
+                    </button>
+                    <button
+                      type="button"
+                      className="text-red-600 hover:text-red-700 flex items-center gap-1"
+                      onClick={() => handleDelete(s.id)}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!filtered.length ? (
+                <div className="px-4 py-6 text-sm text-gray-500">No subjects found.</div>
+              ) : null}
+            </div>
+          </Card>
         </>
       ) : (
         <ClassSubjectsView />

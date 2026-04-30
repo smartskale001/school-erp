@@ -24,7 +24,7 @@ export class UserEntity {
   @Column({ type: 'varchar', default: Role.STUDENT })
   role: Role;
 
-  @Column({ name: 'teacher_id', nullable: true, length: 20 })
+  @Column({ name: 'teacher_id', nullable: true, length: 50 })
   teacherId: string;
 
   @Column({ name: 'school_id', default: 'school_001', length: 50 })

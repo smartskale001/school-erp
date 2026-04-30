@@ -17,7 +17,7 @@ export class LeaveApplicationEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'teacher_id', length: 20 })
+  @Column({ name: 'teacher_id', length: 50 })
   teacherId: string;
 
   @Column({ name: 'leave_type', length: 20, default: 'other' })

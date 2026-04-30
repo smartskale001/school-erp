@@ -20,10 +20,10 @@ export class ProxyAssignmentEntity {
   @Column({ name: 'leave_application_id', nullable: true })
   leaveApplicationId: string;
 
-  @Column({ name: 'original_teacher_id', length: 20 })
+  @Column({ name: 'original_teacher_id', length: 50 })
   originalTeacherId: string;
 
-  @Column({ name: 'proxy_teacher_id', length: 20 })
+  @Column({ name: 'proxy_teacher_id', length: 50 })
   proxyTeacherId: string;
 
   @Column({ name: 'class_id', length: 20 })

@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch,
-  Param, Body, UseGuards,
+  Param, Body, UseGuards, BadRequestException, ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { LeaveService } from './leave.service';
@@ -52,6 +52,12 @@ export class LeaveController {
   @ApiOperation({ summary: 'List leave applications (coordinator+: all; teacher: own)' })
   findAll(@CurrentUser() user: any) { return this.svc.findAll(user); }
 
+  @Get('my')
+  @ApiOperation({ summary: 'List my leave applications' })
+  getMyLeaves(@CurrentUser() user: any) {
+    return this.svc.findAll(user);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get leave application by id' })
   findOne(@Param('id') id: string) { return this.svc.findOne(id); }
@@ -60,6 +66,9 @@ export class LeaveController {
   @UseGuards(RolesGuard) @MinRole(Role.TEACHER)
   @ApiOperation({ summary: 'Submit leave application (teacher+)' })
   submit(@Body() dto: SubmitLeaveDto, @CurrentUser() user: any) {
+    if (user.role !== Role.TEACHER) {
+      throw new ForbiddenException('Only teachers can apply leave');
+    }
     return this.svc.submit(dto, user);
   }
 
