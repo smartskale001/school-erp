@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
 import {
-  getLeaveApplications, getLeaveApplicationsForTeacher, approveLeave, rejectLeave,
-} from '@/modules/leave/services/leaveService'; // Updated import
+  getLeaveApplications, getLeaveApplicationsForTeacher, approveLeave, rejectLeave, getProxyAssignments,
+} from '@/modules/leave/services/leaveService';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', cls: 'bg-yellow-100 text-yellow-700' },
@@ -33,21 +33,22 @@ export default function LeaveListPage() {
   const { canApproveLeave, user } = useAuth();
   const canApprove = canApproveLeave;
   const [leaves, setLeaves] = useState([]);
+  const [proxies, setProxies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [actionId, setActionId] = useState(null);
-  const [rejectModal, setRejectModal] = useState(null); // leave id being rejected
+  const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
-      if (canApprove) {
-        setLeaves(await getLeaveApplications());
-      } else {
-        // Fetch personal leaves for teachers
-        setLeaves(await getLeaveApplicationsForTeacher());
-      }
+      const [leaveData, proxyData] = await Promise.all([
+        canApprove ? getLeaveApplications() : getLeaveApplicationsForTeacher(),
+        canApprove ? getProxyAssignments() : Promise.resolve([]),
+      ]);
+      setLeaves(leaveData);
+      setProxies(proxyData);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -194,14 +195,24 @@ export default function LeaveListPage() {
                         </button>
                       </>
                     )}
-                    {leave.status === 'approved' && canApprove && (
-                      <button
-                        onClick={() => navigate(`/leave/${leave.id}/proxy`)}
-                        className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded"
-                      >
-                        Assign Proxy
-                      </button>
-                    )}
+                    {leave.status === 'approved' && canApprove && (() => {
+                      const hasProxy = proxies.some((p) => p.leaveApplicationId === leave.id);
+                      return hasProxy ? (
+                        <button
+                          onClick={() => navigate(`/leave/${leave.id}/proxy`)}
+                          className="flex items-center gap-1 text-xs text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2.5 py-1 rounded"
+                        >
+                          <UserCheck size={12} /> Proxy Assigned
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/leave/${leave.id}/proxy`)}
+                          className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded"
+                        >
+                          Assign Proxy
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               );
