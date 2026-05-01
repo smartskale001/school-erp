@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserCheck, AlertCircle } from 'lucide-react';
 import {
-  getLeaveApplications,
-  createProxyAssignment,
-  getProxyAssignments,
-} from '@/modules/leave/services/leaveService';
-import { loadTimetableFromDb } from '@/modules/timetable/services/timetableService';
+  getLeaveApplications, createProxyAssignment, getProxyAssignments
+} from '@/modules/leave/services/leaveService'; // Updated import
+import { loadTimetableFromDb } from '@/modules/timetable/services/timetableService'; // Updated import
+import { useAuth } from '@/core/context/AuthContext';
 import { useTeachers } from '@/core/hooks/useTeachers';
 import { days, periods } from '@/modules/timetable/pages/TimetablePage';
 
@@ -73,6 +72,7 @@ function getSuggestedProxies(subject, leaveTeacherId, periodIndex, dayIndex, tea
 export default function ProxyAssignmentPage() {
   const { leaveId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { teachers } = useTeachers();
   const [leave, setLeave] = useState(null);
   const [affected, setAffected] = useState([]);
@@ -93,15 +93,11 @@ export default function ProxyAssignmentPage() {
       ]);
       const found = all.find((l) => l.id === leaveId);
       setLeave(found);
-      const nextTimetable = dbTimetable || {};
-      setTimetable(nextTimetable);
-      if (found) {
-        const ap = getAffectedPeriods(found.teacherId, found.startDate, found.endDate, teachers, nextTimetable);
+      if (found && dbTimetable) {
+        setTimetable(dbTimetable);
+        const ap = getAffectedPeriods(found.teacherId, found.startDate, found.endDate, teachers, dbTimetable);
         setAffected(ap);
-        setExisting(proxies.filter((p) => p.leaveApplicationId === leaveId || p.leaveId === leaveId));
-      } else {
-        setAffected([]);
-        setExisting([]);
+        setExisting(proxies.filter((p) => p.leaveId === leaveId));
       }
       setLoading(false);
     }
@@ -126,7 +122,7 @@ export default function ProxyAssignmentPage() {
               date: ap.date,
               classId: ap.classKey,
               subjectId: ap.subject,
-              periodId: ap.periodLabel,
+              periodId: String(ap.periodIndex),
             })
           )
       );

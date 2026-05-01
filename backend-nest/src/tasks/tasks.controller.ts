@@ -27,8 +27,8 @@ export class TasksController {
   findAll(@CurrentUser() user: any) { return this.svc.findAllTasks(user); }
 
   @Get('assignments/all')
-  @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.PRINCIPAL)
-  @ApiOperation({ summary: 'All assignments with embedded task data (admin/principal)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR)
+  @ApiOperation({ summary: 'All assignments with embedded task data (admin/principal/coordinator)' })
   allAssignments() { return this.svc.getAllAssignmentsWithTasks(); }
 
   @Get('assignments/mine')

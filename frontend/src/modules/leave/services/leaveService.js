@@ -1,49 +1,55 @@
 import { apiRequest } from '@/core/api/client';
 import { API_ENDPOINTS } from '@/core/api/endpoints';
 
-export async function submitLeaveApplication(data) {
-  const result = await apiRequest(API_ENDPOINTS.leave.submit, {
+export async function submitLeaveApplication(leaveData) {
+  return apiRequest(API_ENDPOINTS.leave.submit, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(leaveData),
   });
-  return result.id;
 }
 
 export async function getLeaveApplications() {
   return apiRequest(API_ENDPOINTS.leave.list);
 }
 
-export async function getLeaveApplicationsForTeacher(_teacherId) {
+export async function getLeaveApplicationsForTeacher() {
   return apiRequest(API_ENDPOINTS.leave.my);
 }
 
-export async function approveLeave(leaveId, approvedBy) {
-  return apiRequest(API_ENDPOINTS.leave.approve(leaveId), { method: 'PATCH' });
+export async function approveLeave(leaveId, userId) {
+  // userId is passed for backend context if needed, but backend should use JWT
+  return apiRequest(API_ENDPOINTS.leave.approve(leaveId), {
+    method: 'PATCH',
+    body: JSON.stringify({ approvedBy: userId }), // Backend will likely use user from JWT
+  });
 }
 
-export async function rejectLeave(leaveId, approvedBy, remarks) {
+export async function rejectLeave(leaveId, userId, remarks) {
   return apiRequest(API_ENDPOINTS.leave.reject(leaveId), {
     method: 'PATCH',
-    body: JSON.stringify({ remarks }),
+    body: JSON.stringify({ approvedBy: userId, remarks }), // Backend will likely use user from JWT
   });
 }
 
-export async function createProxyAssignment(data) {
-  const result = await apiRequest(API_ENDPOINTS.leave.proxy.create, {
+export async function createProxyAssignment(proxyData) {
+  return apiRequest(API_ENDPOINTS.leave.proxy.create, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(proxyData),
   });
-  return result.id;
 }
 
 export async function getProxyAssignments() {
   return apiRequest(API_ENDPOINTS.leave.proxy.list);
 }
 
-export async function approveProxy(proxyId, approvedBy) {
-  return apiRequest(API_ENDPOINTS.leave.proxy.approve(proxyId), { method: 'PATCH' });
+export async function approveProxy(proxyId) {
+  return apiRequest(API_ENDPOINTS.leave.proxy.approve(proxyId), {
+    method: 'PATCH',
+  });
 }
 
-export async function rejectProxy(proxyId, approvedBy) {
-  return apiRequest(API_ENDPOINTS.leave.proxy.reject(proxyId), { method: 'PATCH' });
+export async function rejectProxy(proxyId) {
+  return apiRequest(API_ENDPOINTS.leave.proxy.reject(proxyId), {
+    method: 'PATCH',
+  });
 }

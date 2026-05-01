@@ -87,10 +87,8 @@ export const getTeacherPeriodsForDay = (gridsByClass, teacherName, dayIndex) => 
 
 export const canAssignSubjectForClass = ({ subjectsData, gridsByClass, classKey, subjectName }) => {
   const { maxPeriodsPerSubject } = getTimetableRules();
-  const available = getSubjectAvailability(subjectsData, subjectName);
-  const usedGlobal = getUsedPeriodsForSubject(gridsByClass, subjectName);
   const usedClass = getUsedPeriodsForSubjectInClass(gridsByClass, classKey, subjectName);
-  return usedGlobal < available && usedClass < maxPeriodsPerSubject;
+  return usedClass < maxPeriodsPerSubject;
 };
 
 export const canAssignSubjectForClassDay = ({ gridsByClass, classKey, subjectName, dayIndex }) => {
@@ -109,15 +107,10 @@ export const canAssignTeacherForDay = (gridsByClass, teacherName, dayIndex, curr
 
 export const getAvailabilityStatus = ({ subjectsData, gridsByClass, selectedClass, subjectName }) => {
   const { maxPeriodsPerSubject } = getTimetableRules();
-  const available = getSubjectAvailability(subjectsData, subjectName);
-  const used = getUsedPeriodsForSubject(gridsByClass, subjectName);
   const usedClass = selectedClass
     ? getUsedPeriodsForSubjectInClass(gridsByClass, selectedClass, subjectName)
     : 0;
   return {
-    available,
-    used,
-    remaining: available - used,
     usedClass,
     classRemaining: maxPeriodsPerSubject - usedClass,
   };

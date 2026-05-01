@@ -3,11 +3,8 @@ import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle } from 'lu
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
 import {
-  getLeaveApplications,
-  getLeaveApplicationsForTeacher,
-  approveLeave,
-  rejectLeave,
-} from '@/modules/leave/services/leaveService';
+  getLeaveApplications, getLeaveApplicationsForTeacher, approveLeave, rejectLeave,
+} from '@/modules/leave/services/leaveService'; // Updated import
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', cls: 'bg-yellow-100 text-yellow-700' },

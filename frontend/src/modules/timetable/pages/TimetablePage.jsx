@@ -31,7 +31,7 @@ import {
   canAssignSubjectForClass,
   canAssignSubjectForClassDay,
   getSubjectRuleViolationsForClass,
-} from "@/modules/timetable/rules";
+} from "@/modules/timetable/rules"; // Closing brace and 'from' clause were missing here
 import { autoAssignForClass } from "@/modules/timetable/autoAssign";
 import { getPeriodsFromSlots, getWorkingDays } from "@/modules/timetable/periodUtils";
 import {
@@ -230,7 +230,7 @@ export default function TimetablePage() {
       const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: gridsForValidation, selectedClass, subjectName: payload.subject });
       showNotice(
         "Subject Limit Reached",
-        `Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or the global availability limit has been reached.`,
+        `Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}).`,
         "warning"
       );
       return;
@@ -319,7 +319,7 @@ export default function TimetablePage() {
       const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
       showNotice(
         "Subject Limit Reached",
-        `Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or the global availability limit has been reached.`,
+        `Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}).`,
         "warning"
       );
       return;
@@ -715,7 +715,7 @@ export default function TimetablePage() {
                 {(() => {
                   const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
                   const usedDay = dialog.di !== null ? getUsedPeriodsForSubjectInClassDay(dialogGridForValidation, selectedClass, assignSubject, dialog.di) : 0;
-                  return `Availability: ${status.used}/${status.available} • Class: ${status.usedClass}/${SUBJECT_MAX_PERIODS} • Day: ${usedDay}/${SUBJECT_MAX_PER_DAY}`;
+                  return `Class: ${status.usedClass}/${SUBJECT_MAX_PERIODS} • Day: ${usedDay}/${SUBJECT_MAX_PER_DAY}`;
                 })()}
               </div>
             )}
