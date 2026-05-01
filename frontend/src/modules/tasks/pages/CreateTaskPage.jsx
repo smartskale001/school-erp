@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, User } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/core/context/AuthContext';
 import { createTask } from '@/modules/tasks/services/tasksFirebaseService';
 import { getTeachers } from '@/modules/timetable/services/teachersService';
+import { useClasses } from '@/core/context/ClassesContext';
+import { useSubjects } from '@/core/hooks/useSubjects';
 
 const SCOPE_OPTIONS = [
   { value: 'individual', label: 'Individual Teachers' },
+  { value: 'class', label: 'By Class' },
+  { value: 'subject', label: 'By Subject' },
   { value: 'all', label: 'All Teachers' },
 ];
 
 export default function CreateTaskPage() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { classes } = useClasses();
+  const { subjects } = useSubjects();
   const canManageAllTasks = ['admin', 'principal', 'coordinator'].includes(role);
 
   const [teachers, setTeachers] = useState([]);
@@ -24,6 +30,8 @@ export default function CreateTaskPage() {
   const [remarks, setRemarks] = useState('');
   const [scope, setScope] = useState('individual');
   const [selectedTeachers, setSelectedTeachers] = useState([]);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,6 +50,25 @@ export default function CreateTaskPage() {
   }
 
   const today = new Date().toISOString().split('T')[0];
+  const classOptions = useMemo(
+    () => classes.map((entry) => entry.class).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+    [classes]
+  );
+  const subjectOptions = useMemo(() => {
+    const names = subjects.map((subject) => subject.name).filter(Boolean);
+    const fallback = teachers.map((teacher) => teacher.subject).filter(Boolean);
+    return [...new Set([...names, ...fallback])].sort((a, b) => a.localeCompare(b));
+  }, [subjects, teachers]);
+
+  const classTeachers = useMemo(() => {
+    if (!selectedClass) return [];
+    return teachers.filter((teacher) => (teacher.classes || []).includes(selectedClass));
+  }, [selectedClass, teachers]);
+
+  const subjectTeachers = useMemo(() => {
+    if (!selectedSubject) return [];
+    return teachers.filter((teacher) => teacher.subject === selectedSubject);
+  }, [selectedSubject, teachers]);
 
   const validate = () => {
     const e = {};
@@ -59,6 +86,8 @@ export default function CreateTaskPage() {
 
   const getAssignees = () => {
     if (scope === 'all') return teachers.map((t) => t.id);
+    if (scope === 'class') return classTeachers.map((t) => t.id);
+    if (scope === 'subject') return subjectTeachers.map((t) => t.id);
     return selectedTeachers;
   };
 
@@ -99,6 +128,13 @@ export default function CreateTaskPage() {
     errors[field] ? (
       <p className="text-xs text-red-500 mt-1">{errors[field]}</p>
     ) : null;
+
+  const assignmentPreview = useMemo(() => {
+    if (scope === 'all') return teachers;
+    if (scope === 'class') return classTeachers;
+    if (scope === 'subject') return subjectTeachers;
+    return teachers.filter((teacher) => selectedTeachers.includes(teacher.id));
+  }, [scope, teachers, classTeachers, subjectTeachers, selectedTeachers]);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -237,12 +273,18 @@ export default function CreateTaskPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
           <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Assignment</h2>
 
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {SCOPE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => { setScope(opt.value); setSelectedTeachers([]); setErrors((p) => ({ ...p, assignees: '' })); }}
+                onClick={() => {
+                  setScope(opt.value);
+                  setSelectedTeachers([]);
+                  setSelectedClass('');
+                  setSelectedSubject('');
+                  setErrors((p) => ({ ...p, assignees: '' }));
+                }}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors ${scope === opt.value
                     ? 'bg-emerald-500 text-white border-emerald-500'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'
@@ -256,6 +298,62 @@ export default function CreateTaskPage() {
           {scope === 'all' && (
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
               This task will be assigned to all <strong>{teachers.length}</strong> teachers. Each will track status independently.
+            </div>
+          )}
+
+          {scope === 'class' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select class</label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => {
+                    setSelectedClass(e.target.value);
+                    setErrors((p) => ({ ...p, assignees: '' }));
+                  }}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                >
+                  <option value="">Choose a class</option>
+                  {classOptions.map((className) => (
+                    <option key={className} value={className}>
+                      {className}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                {selectedClass
+                  ? `This will assign the task to all ${classTeachers.length} teachers mapped to ${selectedClass}.`
+                  : 'Choose a class to target every teacher assigned to that class.'}
+              </div>
+            </div>
+          )}
+
+          {scope === 'subject' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select subject</label>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => {
+                    setSelectedSubject(e.target.value);
+                    setErrors((p) => ({ ...p, assignees: '' }));
+                  }}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                >
+                  <option value="">Choose a subject</option>
+                  {subjectOptions.map((subjectName) => (
+                    <option key={subjectName} value={subjectName}>
+                      {subjectName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                {selectedSubject
+                  ? `This will assign the task to all ${subjectTeachers.length} teachers who teach ${selectedSubject}.`
+                  : 'Choose a subject to target all teachers mapped to that subject.'}
+              </div>
             </div>
           )}
 
@@ -285,7 +383,33 @@ export default function CreateTaskPage() {
             </div>
           )}
 
-          {scope === 'all' && err('assignees')}
+          {scope !== 'individual' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{assignmentPreview.length} selected</span>
+                {scope !== 'all' && assignmentPreview.length === 0 && (
+                  <span>No matching teachers yet</span>
+                )}
+              </div>
+              <div className="max-h-56 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+                {assignmentPreview.length > 0 ? (
+                  assignmentPreview.map((teacher) => (
+                    <div key={teacher.id} className="px-4 py-2.5">
+                      <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {[teacher.subject, ...(teacher.classes || []).slice(0, 2)].filter(Boolean).join(' • ') || 'No metadata'}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-gray-500">
+                    No teachers match this assignment rule yet.
+                  </div>
+                )}
+              </div>
+              {err('assignees')}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pb-6">
