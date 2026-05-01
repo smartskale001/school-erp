@@ -38,13 +38,13 @@ export default function TeachersPage() {
   }
   // Teachers state is loaded from service for modularity and backend readiness
   const [teachers, setTeachers] = useState([]);
-    // Load teachers on mount
-    React.useEffect(() => {
-      (async () => {
-        const list = await getTeachers();
-        setTeachers(list);
-      })();
-    }, []);
+  // Load teachers on mount
+  React.useEffect(() => {
+    (async () => {
+      const list = await getTeachers();
+      setTeachers(list);
+    })();
+  }, []);
   const [query, setQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -425,11 +425,10 @@ export default function TeachersPage() {
               Cancel
             </button>
             <button
-              className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${
-                confirmDialog.action === "clone"
+              className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${confirmDialog.action === "clone"
                   ? "bg-blue-600 hover:bg-blue-700"
                   : "bg-red-600 hover:bg-red-700"
-              }`}
+                }`}
               onClick={() => {
                 if (confirmDialog.action === "clone") {
                   confirmClone();

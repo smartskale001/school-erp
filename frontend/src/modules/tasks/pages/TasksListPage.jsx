@@ -15,24 +15,24 @@ import teachersData from '@/data/teachers.json';
 
 const STATUS_CONFIG = {
   not_started: { label: 'Not Started', cls: 'bg-gray-100 text-gray-600', icon: Clock },
-  in_progress:  { label: 'In Progress',  cls: 'bg-blue-100 text-blue-700',   icon: Clock },
-  completed:    { label: 'Completed',     cls: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-  overdue:      { label: 'Overdue',       cls: 'bg-red-100 text-red-700',     icon: AlertCircle },
-  cancelled:    { label: 'Cancelled',     cls: 'bg-gray-100 text-gray-400 line-through', icon: XCircle },
+  in_progress: { label: 'In Progress', cls: 'bg-blue-100 text-blue-700', icon: Clock },
+  completed: { label: 'Completed', cls: 'bg-green-100 text-green-700', icon: CheckCircle2 },
+  overdue: { label: 'Overdue', cls: 'bg-red-100 text-red-700', icon: AlertCircle },
+  cancelled: { label: 'Cancelled', cls: 'bg-gray-100 text-gray-400 line-through', icon: XCircle },
 };
 
 const PRIORITY_CONFIG = {
-  high:   'bg-red-100 text-red-700',
+  high: 'bg-red-100 text-red-700',
   medium: 'bg-yellow-100 text-yellow-700',
-  low:    'bg-green-100 text-green-700',
+  low: 'bg-green-100 text-green-700',
 };
 
 const STATUS_TRANSITIONS = {
   not_started: ['in_progress'],
-  in_progress:  ['completed'],
-  completed:    [],
-  overdue:      ['completed'],
-  cancelled:    [],
+  in_progress: ['completed'],
+  completed: [],
+  overdue: ['completed'],
+  cancelled: [],
 };
 
 function StatusBadge({ status }) {
@@ -109,7 +109,7 @@ export default function TasksListPage() {
     try {
       await updateAssignmentStatus(assignmentId, newStatus);
       await load();
-    } catch {}
+    } catch { }
     setUpdatingId(null);
   };
 

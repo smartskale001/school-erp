@@ -238,11 +238,10 @@ export default function CreateTaskPage() {
                 key={opt.value}
                 type="button"
                 onClick={() => { setScope(opt.value); setSelectedTeachers([]); setErrors((p) => ({ ...p, assignees: '' })); }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
-                  scope === opt.value
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors ${scope === opt.value
                     ? 'bg-emerald-500 text-white border-emerald-500'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'
-                }`}
+                  }`}
               >
                 {opt.label}
               </button>

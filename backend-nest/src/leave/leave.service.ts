@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { LeaveApplicationEntity, LeaveStatus } from '../database/entities/leave-application.entity';
 import { ProxyAssignmentEntity, ProxyStatus } from '../database/entities/proxy-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
+import { UserEntity } from '../database/entities/user.entity';
 import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto } from './dto/leave.dto';
 import { Role } from '../common/enums/role.enum';
 
@@ -18,6 +19,8 @@ export class LeaveService {
     private proxyRepo: Repository<ProxyAssignmentEntity>,
     @InjectRepository(TeacherEntity)
     private teacherRepo: Repository<TeacherEntity>,
+    @InjectRepository(UserEntity)
+    private userRepo: Repository<UserEntity>,
   ) {}
 
   private async getTeacherId(user: any): Promise<string> {
@@ -31,20 +34,61 @@ export class LeaveService {
 
   async findAll(user: any) {
     const isPrivileged = [Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR].includes(user.role);
+    let leaves: LeaveApplicationEntity[];
     if (isPrivileged) {
-      return this.leaveRepo.find({ order: { submittedAt: 'DESC' } });
+      leaves = await this.leaveRepo.find({ order: { submittedAt: 'DESC' } });
+    } else {
+      const teacherId = await this.getTeacherId(user);
+      leaves = await this.leaveRepo.find({
+        where: { teacherId },
+        order: { submittedAt: 'DESC' },
+      });
     }
-    const teacherId = await this.getTeacherId(user);
-    return this.leaveRepo.find({
-      where: { teacherId },
-      order: { submittedAt: 'DESC' },
+
+    const teachers = await this.teacherRepo.find();
+    const users = await this.userRepo.find();
+
+    return leaves.map((leave) => {
+      const teacher = teachers.find(t => t.id === leave.teacherId || t.email === leave.teacherId);
+      const userRec = users.find(u => u.id === leave.teacherId || u.teacherId === leave.teacherId);
+      const teacherName = teacher?.name || userRec?.name || 'Unknown Teacher';
+
+      return {
+        ...leave,
+        teacherName,
+        teacher: {
+          id: teacher?.id || leave.teacherId,
+          name: teacherName,
+          full_name: teacherName,
+          email: teacher?.email || userRec?.email,
+          subject: teacher?.subjectNames?.[0] || '',
+        },
+      };
     });
   }
 
   async findOne(id: string) {
     const leave = await this.leaveRepo.findOne({ where: { id } });
     if (!leave) throw new NotFoundException('Leave application not found');
-    return leave;
+
+    const teachers = await this.teacherRepo.find();
+    const users = await this.userRepo.find();
+
+    const teacher = teachers.find(t => t.id === leave.teacherId || t.email === leave.teacherId);
+    const userRec = users.find(u => u.id === leave.teacherId || u.teacherId === leave.teacherId);
+    const teacherName = teacher?.name || userRec?.name || 'Unknown Teacher';
+
+    return {
+      ...leave,
+      teacherName,
+      teacher: {
+        id: teacher?.id || leave.teacherId,
+        name: teacherName,
+        full_name: teacherName,
+        email: teacher?.email || userRec?.email,
+        subject: teacher?.subjectNames?.[0] || '',
+      },
+    };
   }
 
   async submit(dto: SubmitLeaveDto, user: any) {

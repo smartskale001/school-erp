@@ -21,7 +21,7 @@ export class AuthService {
     private userRepo: Repository<UserEntity>,
     private jwtService: JwtService,
     private config: ConfigService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto) {
     const exists = await this.userRepo.findOne({ where: { email: dto.email } });

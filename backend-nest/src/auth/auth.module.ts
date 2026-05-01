@@ -21,4 +21,4 @@ import { UserEntity } from '../database/entities/user.entity';
   controllers: [AuthController],
   exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }

@@ -11,4 +11,4 @@ import { TaskAssignmentEntity } from '../database/entities/task-assignment.entit
   controllers: [TasksController],
   exports: [TasksService],
 })
-export class TasksModule {}
+export class TasksModule { }

@@ -19,7 +19,7 @@ export class TasksService {
     private taskRepo: Repository<TaskEntity>,
     @InjectRepository(TaskAssignmentEntity)
     private assignmentRepo: Repository<TaskAssignmentEntity>,
-  ) {}
+  ) { }
 
   // ─── Tasks ────────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ export class TasksService {
   async cancelAssignment(id: string, user: CurrentUser) {
     const assignment = await this.assignmentRepo.findOne({ where: { id } });
     if (!assignment) throw new NotFoundException('Assignment not found');
-    
+
     const isPrivileged = [Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR].includes(user.role);
     if (!isPrivileged) throw new ForbiddenException('Only staff can cancel assignments');
 

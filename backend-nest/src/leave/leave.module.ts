@@ -5,9 +5,10 @@ import { LeaveController } from './leave.controller';
 import { LeaveApplicationEntity } from '../database/entities/leave-application.entity';
 import { ProxyAssignmentEntity } from '../database/entities/proxy-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
+import { UserEntity } from '../database/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity])],
+  imports: [TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity, UserEntity])],
   providers: [LeaveService],
   controllers: [LeaveController],
   exports: [LeaveService],

@@ -142,7 +142,7 @@ export default function LeaveListPage() {
         ) : (
           <div className="divide-y">
             {filtered.map((leave) => {
-              const teacher = teachersData.find((t) => t.id === leave.teacherId);
+              const teacherName = leave.teacherName || leave.teacher?.full_name || leave.teacher?.name || 'Unknown Teacher';
               const submittedAt = leave.submittedAt?.toDate
                 ? leave.submittedAt.toDate()
                 : leave.submittedAt ? new Date(leave.submittedAt) : null;
@@ -150,12 +150,12 @@ export default function LeaveListPage() {
               return (
                 <div key={leave.id} className="px-5 py-4 flex items-start gap-4">
                   <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-semibold shrink-0">
-                    {(teacher?.name || leave.teacherName || 'T')[0]}
+                    {teacherName[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-gray-900 text-sm">
-                        {teacher?.name || leave.teacherName || 'Unknown Teacher'}
+                        {teacherName}
                       </span>
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${LEAVE_TYPE_CLS[leave.leaveType] || 'bg-gray-50 text-gray-600'}`}>
                         {leave.leaveType?.charAt(0).toUpperCase() + leave.leaveType?.slice(1)}
