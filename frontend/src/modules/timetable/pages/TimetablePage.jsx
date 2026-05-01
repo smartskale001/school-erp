@@ -33,7 +33,7 @@ import {
   getSubjectRuleViolationsForClass,
 } from "@/modules/timetable/rules";
 import { autoAssignForClass } from "@/modules/timetable/autoAssign";
-import { getPeriodsFromSlots, DEFAULT_DAYS } from "@/modules/timetable/periodUtils";
+import { getPeriodsFromSlots, getWorkingDays } from "@/modules/timetable/periodUtils";
 import {
   saveTimetableToDb,
   loadTimetableFromDb,
@@ -43,7 +43,7 @@ import { useAuth } from "@/core/context/AuthContext";
 import { useSubjects } from "@/core/hooks/useSubjects";
 import { useTeachers } from "@/core/hooks/useTeachers";
 
-export const days = DEFAULT_DAYS;
+export const days = getWorkingDays();
 // Module-level export so other pages can import periods without triggering component re-renders.
 // Reads erp_period_slots on first import; navigating to ClassTimeManagement and back causes a fresh read.
 export const periods = getPeriodsFromSlots();

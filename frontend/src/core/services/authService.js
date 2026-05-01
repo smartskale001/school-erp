@@ -1,4 +1,18 @@
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const LOCAL_STORAGE_KEYS_TO_CLEAR = [
+  'access_token',
+  'refresh_token',
+  'user_profile',
+  'erp_timetable_rules',
+  'erp_working_days',
+  'erp_rooms',
+  'erp_classes',
+  'erp_timetable',
+  'erp_period_slots',
+];
+const SESSION_STORAGE_KEYS_TO_CLEAR = [
+  'erp_timetable_prefs',
+];
 
 // ─── Token storage ────────────────────────────────────────────────────────────
 
@@ -13,9 +27,8 @@ function saveSession(data) {
 }
 
 function clearSession() {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_profile');
+  LOCAL_STORAGE_KEYS_TO_CLEAR.forEach((key) => localStorage.removeItem(key));
+  SESSION_STORAGE_KEYS_TO_CLEAR.forEach((key) => sessionStorage.removeItem(key));
 }
 
 // ─── Internal fetch helpers ───────────────────────────────────────────────────

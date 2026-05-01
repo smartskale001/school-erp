@@ -1,3 +1,5 @@
+import { getWorkingDays } from './periodUtils';
+
 const RULES_KEY = 'erp_timetable_rules';
 
 export const DEFAULT_RULES = {
@@ -20,9 +22,7 @@ export const saveTimetableRules = (rules) => {
   localStorage.setItem(RULES_KEY, JSON.stringify(rules));
 };
 
-const HOLIDAY_DAYS = new Set(['Sat']);
-
-export const isHolidayDay = (day) => HOLIDAY_DAYS.has(day);
+export const isHolidayDay = (day) => !getWorkingDays().includes(day);
 
 export const getSubjectAvailability = (subjectsData, subjectName, fallback = 20) => {
   const subject = subjectsData.find((s) => s.name === subjectName);
