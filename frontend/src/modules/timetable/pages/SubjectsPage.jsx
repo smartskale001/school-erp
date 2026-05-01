@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import ClassSubjectsView from "./ClassSubjectsView";
 import {
   Plus,
@@ -17,8 +17,8 @@ import {
   Sigma,
   Languages,
 } from "lucide-react";
-import subjectsData from "@/data/subjects.json";
-import classesData from "@/data/classes.json";
+import { getSubjects, addSubject, updateSubject, deleteSubject, invalidateSubjectsCache } from "@/modules/timetable/services/subjectsService";
+import { useClasses } from "@/core/context/ClassesContext";
 import { Button } from "@/core/components/Button";
 import { Input } from "@/core/components/Input";
 import { Card } from "@/core/components/Card";
@@ -44,7 +44,9 @@ import {
 const availabilityOptions = [18, 20, 22, 24, 26, 28, 30, 35, 40];
 
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState(subjectsData);
+  const { classes: classesRaw } = useClasses();
+  const classesData = classesRaw; // { class, sections[] }[]
+  const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -54,7 +56,12 @@ export default function SubjectsPage() {
   const [availability, setAvailability] = useState(20);
   const [subjectClasses, setSubjectClasses] = useState([]);
   const [tab, setTab] = useState("subjects");
+  const [saveError, setSaveError] = useState("");
   const importRef = useRef(null);
+
+  useEffect(() => {
+    getSubjects().then(setSubjects).catch(() => {});
+  }, []);
 
   const filtered = subjects.filter((s) =>
     [s.name, s.shortName]
@@ -70,38 +77,37 @@ export default function SubjectsPage() {
     setAvailability(20);
     setSubjectClasses([]);
     setEditingId(null);
+    setSaveError("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
-    if (editingId) {
-      setSubjects((prev) =>
-        prev.map((s) =>
-          s.id === editingId
-            ? {
-              ...s,
-              name: name.trim(),
-              shortName: shortName.trim() || autoShortName(name.trim()),
-              difficulty: Number(difficulty),
-              availability: Number(availability),
-              classes: subjectClasses,
-            }
-            : s
-        )
-      );
-    } else {
-      const next = {
-        id: `S-${String(subjects.length + 1).padStart(3, "0")}`,
-        name: name.trim(),
-        shortName: shortName.trim() || autoShortName(name.trim()),
-        difficulty: Number(difficulty),
-        availability: Number(availability),
-        classes: subjectClasses,
-      };
-      setSubjects((prev) => [next, ...prev]);
+    setSaveError("");
+    try {
+      if (editingId) {
+        await updateSubject(editingId, {
+          name: name.trim(),
+          shortName: shortName.trim() || autoShortName(name.trim()),
+          difficulty: Number(difficulty),
+          availability: Number(availability),
+          classes: subjectClasses,
+        });
+      } else {
+        await addSubject({
+          name: name.trim(),
+          shortName: shortName.trim() || autoShortName(name.trim()),
+          difficulty: Number(difficulty),
+          availability: Number(availability),
+          classes: subjectClasses,
+        });
+      }
+      invalidateSubjectsCache();
+      setSubjects(await getSubjects());
+      setIsAddOpen(false);
+      resetForm();
+    } catch (err) {
+      setSaveError(err.message || "Failed to save subject.");
     }
-    setIsAddOpen(false);
-    resetForm();
   };
 
   const handleEdit = (subject) => {
@@ -111,29 +117,40 @@ export default function SubjectsPage() {
     setDifficulty(subject.difficulty ?? 5);
     setAvailability(subject.availability ?? 20);
     setSubjectClasses(subject.classes || []);
+    setSaveError("");
     setIsAddOpen(true);
   };
 
   const handleClone = (subject) => {
-    const next = {
-      ...subject,
-      id: `S-${String(subjects.length + 1).padStart(3, "0")}`,
-      name: `${subject.name} (Copy)`,
-      shortName: subject.shortName ? `${subject.shortName}-2` : autoShortName(subject.name),
-    };
-    setSubjects((prev) => [next, ...prev]);
+    resetForm();
+    setName(`${subject.name} (Copy)`);
+    setShortName(subject.shortName ? `${subject.shortName}-2` : "");
+    setDifficulty(subject.difficulty ?? 5);
+    setAvailability(subject.availability ?? 20);
+    setSubjectClasses(subject.classes || []);
+    setIsAddOpen(true);
   };
 
-  const handleDelete = (subjectId) => {
-    setSubjects((prev) => prev.filter((s) => s.id !== subjectId));
+  const handleDelete = async (subjectId) => {
+    try {
+      await deleteSubject(subjectId);
+      invalidateSubjectsCache();
+      setSubjects(await getSubjects());
+    } catch (err) {
+      console.error("Failed to delete subject:", err);
+    }
   };
 
-  const handleAvailabilityChange = (subjectId, value) => {
+  const handleAvailabilityChange = async (subjectId, value) => {
     setSubjects((prev) =>
-      prev.map((s) =>
-        s.id === subjectId ? { ...s, availability: Number(value) } : s
-      )
+      prev.map((s) => s.id === subjectId ? { ...s, availability: Number(value) } : s)
     );
+    try {
+      await updateSubject(subjectId, { availability: Number(value) });
+      invalidateSubjectsCache();
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+    }
   };
 
   const handleImportClick = () => {
@@ -271,6 +288,9 @@ export default function SubjectsPage() {
                         ))}
                       </div>
                     </div>
+                    {saveError && (
+                      <p className="text-sm text-red-600">{saveError}</p>
+                    )}
                     <DialogFooter>
                       <DialogClose asChild>
                         <Button variant="outline" type="button" onClick={resetForm}>

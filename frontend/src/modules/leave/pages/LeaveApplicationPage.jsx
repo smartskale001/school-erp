@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/core/context/AuthContext';
 import { submitLeaveApplication } from '@/modules/leave/services/leaveFirebaseService';
-import teachersData from '@/data/teachers.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
 
 const LEAVE_TYPES = ['sick', 'casual', 'emergency', 'other'];
 
 export default function LeaveApplicationPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { teachers } = useTeachers();
 
-  const teacher = teachersData.find(
+  const teacher = teachers.find(
     (t) => t.name === user?.displayName || t.email === user?.email
   );
 

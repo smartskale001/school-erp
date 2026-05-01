@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { apiRequest } from '@/core/api/client';
+import { API_ENDPOINTS } from '@/core/api/endpoints';
+import { useAuth } from '@/core/context/AuthContext';
 import defaultClassesData from '@/data/classes.json';
 
 const STORAGE_KEY = 'erp_classes';
@@ -18,7 +21,20 @@ function persist(classes) {
 const ClassesContext = createContext(null);
 
 export function ClassesProvider({ children }) {
+  const { user } = useAuth();
   const [classes, setClasses] = useState(loadClasses);
+
+  useEffect(() => {
+    if (!user) return;
+    apiRequest(API_ENDPOINTS.classes.list)
+      .then((list) => {
+        if (!list?.length) return;
+        const fromApi = list.map((c) => ({ class: c.name, sections: c.sections || [] }));
+        setClasses(fromApi);
+        persist(fromApi);
+      })
+      .catch(() => {});
+  }, [user]);
 
   const addClass = useCallback((className, sections) => {
     setClasses((prev) => {

@@ -5,6 +5,8 @@
 import 'reflect-metadata';
 import * as dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { Role } from '../common/enums/role.enum';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
 import { SchoolClassEntity } from './entities/class.entity';
@@ -21,6 +23,8 @@ import { FeeEntity } from './entities/fee.entity';
 import { ReportEntity } from './entities/report.entity';
 
 dotenv.config();
+
+const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@123';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -139,6 +143,20 @@ const periods: Partial<PeriodEntity>[] = [
   { id: 'PER-011', number: 11, startTime: '14:15', endTime: '15:00', isBreak: false, label: 'Period 8',      schoolId: 'school_001' },
 ];
 
+async function buildTeacherUsers() {
+  const passwordHash = await bcrypt.hash(DEFAULT_TEACHER_PASSWORD, 12);
+
+  return teachers.map((teacher) => ({
+    name: teacher.name!,
+    email: teacher.email!,
+    passwordHash,
+    role: Role.TEACHER,
+    teacherId: teacher.id!,
+    schoolId: teacher.schoolId || 'school_001',
+    refreshTokenHash: null,
+  }));
+}
+
 // ─── Runner ──────────────────────────────────────────────────────────────────
 async function upsertAll<T>(
   repo: any,
@@ -155,13 +173,18 @@ async function seed() {
   await AppDataSource.initialize();
   console.log('✅ Connected\n');
 
+  const teacherUsers = await buildTeacherUsers();
+
   await upsertAll(AppDataSource.getRepository(SubjectEntity),     subjects, 'subjects    (16)');
   await upsertAll(AppDataSource.getRepository(TeacherEntity),     teachers, 'teachers    (34)');
   await upsertAll(AppDataSource.getRepository(SchoolClassEntity), classes,  'classes     (10)');
   await upsertAll(AppDataSource.getRepository(RoomEntity),        rooms,    'rooms       (10)');
   await upsertAll(AppDataSource.getRepository(PeriodEntity),      periods,  'periods     (11)');
+  process.stdout.write('Seeding teacher users (34)...');
+  await AppDataSource.getRepository(UserEntity).upsert(teacherUsers, ['email']);
+  console.log(' 34 rows OK');
 
-  console.log('\n🎉 Seed complete!\n');
+  console.log(`\n🎉 Seed complete! Default teacher password: ${DEFAULT_TEACHER_PASSWORD}\n`);
   await AppDataSource.destroy();
 }
 

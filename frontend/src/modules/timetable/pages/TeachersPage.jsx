@@ -1,7 +1,6 @@
 
 
 import React, { useMemo, useState, useEffect } from "react";
-import teachersData from "@/data/teachers.json";
 import { days, periods } from "./TimetablePage";
 
 import { Plus, Check, Pencil, Copy, Trash2 } from "lucide-react";
@@ -10,9 +9,8 @@ import {
   addTeacher,
   updateTeacher,
   deleteTeacher,
-  cloneTeacher,
 } from "../services/teachersService";
-import classesData from "@/data/classes.json";
+import { useClasses } from "@/core/context/ClassesContext";
 import { Button } from "@/core/components/Button";
 import { Input } from "@/core/components/Input";
 import { Card } from "@/core/components/Card";
@@ -37,6 +35,7 @@ export default function TeachersPage() {
     return <div className="text-red-600 p-4">Error: Timetable configuration missing. Please check your imports.</div>;
   }
   // Teachers state is loaded from service for modularity and backend readiness
+  const { classes } = useClasses();
   const [teachers, setTeachers] = useState([]);
   // Load teachers on mount
   React.useEffect(() => {
@@ -51,11 +50,14 @@ export default function TeachersPage() {
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
   const [subject, setSubject] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [tab, setTab] = useState("list");
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [teacherTimetable, setTeacherTimetable] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, teacher: null });
+  const [saveError, setSaveError] = useState("");
 
   // Load timetable from localStorage and build teacher-wise timetable
   useEffect(() => {
@@ -67,31 +69,25 @@ export default function TeachersPage() {
       setTeacherTimetable({});
       return;
     }
-    // Build teacher-wise timetable: { [teacherId]: grid }
     const teacherMap = {};
     Object.entries(gridsByClass).forEach(([classSection, grid]) => {
       grid.forEach((row, pi) => {
         row.forEach((cell, di) => {
           if (cell && cell.teacher) {
-            // Find teacher by name
-            const teacher = teachersData.find(t => t.name === cell.teacher);
+            const teacher = teachers.find(t => t.name === cell.teacher);
             if (!teacher) return;
             if (!teacherMap[teacher.id]) {
-              // Initialize empty grid for teacher
               teacherMap[teacher.id] = periods.map(() => days.map(() => null));
             }
-            teacherMap[teacher.id][pi][di] = {
-              ...cell,
-              classSection,
-            };
+            teacherMap[teacher.id][pi][di] = { ...cell, classSection };
           }
         });
       });
     });
     setTeacherTimetable(teacherMap);
-  }, [tab]);
+  }, [tab, teachers]);
 
-  const classList = useMemo(() => flattenClasses(classesData), []);
+  const classList = useMemo(() => flattenClasses(classes), [classes]);
 
   const filtered = teachers.filter((t) =>
     [t.name, t.shortName, t.subject]
@@ -104,8 +100,11 @@ export default function TeachersPage() {
     setName("");
     setShortName("");
     setSubject("");
+    setEmail("");
+    setPassword("");
     setSelectedClasses([]);
     setEditingId(null);
+    setSaveError("");
   };
 
   const toggleClass = (cls) => {
@@ -114,74 +113,67 @@ export default function TeachersPage() {
     );
   };
 
-  /**
-   * Save teacher (add or update)
-   * If backend is ready, replace with API call and handle errors
-   */
   const handleSave = async () => {
     if (!name.trim() || !subject.trim()) return;
-    if (editingId) {
-      await updateTeacher(editingId, {
-        name: name.trim(),
-        shortName: shortName.trim() || autoShortName(name.trim()),
-        subject: subject.trim(),
-        classes: selectedClasses.length ? selectedClasses : [],
-      });
-    } else {
-      await addTeacher({
-        name: name.trim(),
-        shortName: shortName.trim() || autoShortName(name.trim()),
-        subject: subject.trim(),
-        phone: "",
-        classes: selectedClasses.length ? selectedClasses : [],
-      });
+    if (!editingId && (!email.trim() || !password.trim())) {
+      setSaveError("Email and password are required.");
+      return;
     }
-    setTeachers(await getTeachers());
-    setIsAddOpen(false);
-    resetForm();
+    setSaveError("");
+    try {
+      if (editingId) {
+        await updateTeacher(editingId, {
+          name: name.trim(),
+          shortName: shortName.trim() || autoShortName(name.trim()),
+          subject: subject.trim(),
+          classes: selectedClasses.length ? selectedClasses : [],
+        });
+      } else {
+        await addTeacher({
+          name: name.trim(),
+          shortName: shortName.trim() || autoShortName(name.trim()),
+          subject: subject.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          phone: "",
+          classes: selectedClasses.length ? selectedClasses : [],
+        });
+      }
+      setTeachers(await getTeachers());
+      setIsAddOpen(false);
+      resetForm();
+    } catch (err) {
+      setSaveError(err.message || "Failed to save teacher.");
+    }
   };
 
-  /**
-   * Edit teacher (populate form)
-   */
   const handleEdit = (teacher) => {
     setEditingId(teacher.id);
     setName(teacher.name || "");
     setShortName(teacher.shortName || "");
     setSubject(teacher.subject || "");
+    setEmail(teacher.email || "");
+    setPassword("");
+    setSelectedClasses(teacher.classes || []);
+    setSaveError("");
+    setIsAddOpen(true);
+  };
+
+  const handleClone = (teacher) => {
+    // Pre-fill the add form with cloned data; user must provide a unique email/password
+    resetForm();
+    setName(`${teacher.name} (Copy)`);
+    setShortName(teacher.shortName ? `${teacher.shortName}-2` : "");
+    setSubject(teacher.subject || "");
     setSelectedClasses(teacher.classes || []);
     setIsAddOpen(true);
   };
 
-  /**
-   * Clone teacher
-   * If backend is ready, replace with API call and handle errors
-   */
-  const handleClone = (teacher) => {
-    setConfirmDialog({ open: true, action: "clone", teacher });
-  };
-
-  /**
-   * Delete teacher
-   * If backend is ready, replace with API call and handle errors
-   */
   const handleDelete = (teacherId) => {
     const teacher = teachers.find(t => t.id === teacherId);
     setConfirmDialog({ open: true, action: "delete", teacher });
   };
 
-  /**
-   * Confirm clone action
-   */
-  const confirmClone = async () => {
-    await cloneTeacher(confirmDialog.teacher);
-    setTeachers(await getTeachers());
-    setConfirmDialog({ open: false, action: null, teacher: null });
-  };
-
-  /**
-   * Confirm delete action
-   */
   const confirmDelete = async () => {
     await deleteTeacher(confirmDialog.teacher.id);
     setTeachers(await getTeachers());
@@ -335,36 +327,51 @@ export default function TeachersPage() {
       )}
 
       {/* Add/Edit Teacher Dialog */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsAddOpen(open); }}>
         <DialogContent className="bg-white border border-gray-200 shadow-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Teacher" : "Add Teacher"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {saveError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                {saveError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium mb-1">Name *</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Full name"
-              />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Short Name</label>
-              <Input
-                value={shortName}
-                onChange={(e) => setShortName(e.target.value)}
-                placeholder="e.g., J.Smith"
-              />
+              <Input value={shortName} onChange={(e) => setShortName(e.target.value)} placeholder="e.g., J.Smith" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Subject *</label>
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject name" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Email * {editingId && <span className="text-gray-400 font-normal">(leave blank to keep current)</span>}
+              </label>
               <Input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject name"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="teacher@school.com"
               />
             </div>
+            {!editingId && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Password *</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min 6 characters"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium mb-2">Classes</label>
               <div className="grid grid-cols-3 gap-2">
@@ -385,10 +392,7 @@ export default function TeachersPage() {
           <DialogFooter className="flex gap-2 justify-end">
             <button
               className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              onClick={() => {
-                setIsAddOpen(false);
-                resetForm();
-              }}
+              onClick={() => { setIsAddOpen(false); resetForm(); }}
             >
               Cancel
             </button>
@@ -402,20 +406,14 @@ export default function TeachersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}>
         <DialogContent className="bg-white border border-gray-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle>
-              {confirmDialog.action === "clone" ? "Clone Teacher?" : "Delete Teacher?"}
-            </DialogTitle>
+            <DialogTitle>Delete Teacher?</DialogTitle>
           </DialogHeader>
           <div className="text-sm text-gray-600">
-            {confirmDialog.action === "clone" ? (
-              <p>Are you sure you want to clone <strong>{confirmDialog.teacher?.name}</strong>? This will create a new teacher with the same details.</p>
-            ) : (
-              <p>Are you sure you want to delete <strong>{confirmDialog.teacher?.name}</strong>? This action cannot be undone.</p>
-            )}
+            <p>Are you sure you want to delete <strong>{confirmDialog.teacher?.name}</strong>? This will also remove their login account. This action cannot be undone.</p>
           </div>
           <DialogFooter className="flex gap-2 justify-end">
             <button
@@ -425,19 +423,10 @@ export default function TeachersPage() {
               Cancel
             </button>
             <button
-              className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${confirmDialog.action === "clone"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-red-600 hover:bg-red-700"
-                }`}
-              onClick={() => {
-                if (confirmDialog.action === "clone") {
-                  confirmClone();
-                } else {
-                  confirmDelete();
-                }
-              }}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+              onClick={confirmDelete}
             >
-              {confirmDialog.action === "clone" ? "Clone" : "Delete"}
+              Delete
             </button>
           </DialogFooter>
         </DialogContent>

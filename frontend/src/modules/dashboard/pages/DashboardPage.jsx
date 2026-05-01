@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
 import { getAllAssignmentsWithTasks, getAssignmentsForTeacher } from '@/modules/tasks/services/tasksFirebaseService';
 import { getLeaveApplications, getLeaveApplicationsForTeacher, getProxyAssignments, approveLeave, approveProxy } from '@/modules/leave/services/leaveFirebaseService';
-import teachersData from '@/data/teachers.json';
-import classesData from '@/data/classes.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
+import { useClasses } from '@/core/context/ClassesContext';
 import { days, periods } from '@/modules/timetable/pages/TimetablePage';
 
 // ─── Shared atoms ──────────────────────────────────────────────────────────────
@@ -77,14 +77,16 @@ function Spinner() {
   );
 }
 
-function TeacherName({ id, name }) {
-  return teachersData.find(t => t.id === id)?.name || name || id || '—';
+function TeacherName({ id, name, teachers = [] }) {
+  return teachers.find(t => t.id === id)?.name || name || id || '—';
 }
 
 // ─── Admin Dashboard ───────────────────────────────────────────────────────────
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const { teachers } = useTeachers();
+  const { classes } = useClasses();
   const [assignments, setAssignments] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ function AdminDashboard() {
     });
   }, []);
 
-  const totalClasses   = classesData.reduce((n, c) => n + c.sections.length, 0);
+  const totalClasses   = classes.reduce((n, c) => n + c.sections.length, 0);
   const activeTasks    = assignments.filter(a => !['cancelled', 'completed'].includes(a.status)).length;
   const overdueTasks   = assignments.filter(a => a.status === 'overdue').length;
   const completedTasks = assignments.filter(a => a.status === 'completed').length;
@@ -108,7 +110,7 @@ function AdminDashboard() {
   return (
     <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Users}        label="Teachers"        value={teachersData.length} color="bg-blue-500"    sub="Active staff" />
+        <StatCard icon={Users}        label="Teachers"        value={teachers.length} color="bg-blue-500"    sub="Active staff" />
         <StatCard icon={BookOpen}     label="Classes"         value={totalClasses}         color="bg-indigo-500"  sub="All sections" />
         <StatCard icon={ClipboardList} label="Active Tasks"  value={activeTasks}           color="bg-emerald-500" sub={`${overdueTasks} overdue`} alert={overdueTasks > 0} onClick={() => navigate('/tasks')} />
         <StatCard icon={CalendarOff}  label="Pending Leaves"  value={pendingLeaves}        color="bg-orange-500"  sub="Awaiting approval" onClick={() => navigate('/leave')} />
@@ -137,7 +139,7 @@ function AdminDashboard() {
               <div key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-gray-900 truncate max-w-[180px]">{a.task?.title || '—'}</div>
-                  <div className="text-xs text-gray-400"><TeacherName id={a.teacherId} /></div>
+                  <div className="text-xs text-gray-400"><TeacherName id={a.teacherId} teachers={teachers} /></div>
                 </div>
                 <StatusBadge status={a.status} />
               </div>
@@ -150,7 +152,7 @@ function AdminDashboard() {
             leaves.slice(0, 6).map(l => (
               <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} /></div>
+                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
                   <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
                 </div>
                 <StatusBadge status={l.status} />
@@ -167,6 +169,7 @@ function AdminDashboard() {
 
 function CoordinatorDashboard() {
   const navigate = useNavigate();
+  const { teachers } = useTeachers();
   const [leaves, setLeaves] = useState([]);
   const [proxies, setProxies] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -205,7 +208,7 @@ function CoordinatorDashboard() {
             : approvedNoProxy.slice(0, 6).map(l => (
               <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} /></div>
+                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
                   <div className="text-xs text-gray-400">{l.startDate} – {l.endDate} · {l.leaveType}</div>
                 </div>
                 <button
@@ -226,7 +229,7 @@ function CoordinatorDashboard() {
             : pendingLeaves.slice(0, 6).map(l => (
               <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} /></div>
+                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
                   <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
                 </div>
                 <StatusBadge status={l.status} />
@@ -262,6 +265,7 @@ function CoordinatorDashboard() {
 function PrincipalDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { teachers } = useTeachers();
   const [leaves, setLeaves] = useState([]);
   const [proxies, setProxies] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -317,7 +321,7 @@ function PrincipalDashboard() {
             : pendingLeaves.slice(0, 5).map(l => (
               <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} /></div>
+                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
                   <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
                 </div>
                 <div className="flex gap-1.5">
@@ -345,8 +349,8 @@ function PrincipalDashboard() {
           {pendingProxies.length === 0
             ? <div className="px-5 py-8 text-center text-sm text-green-600 font-medium">No pending proxy approvals ✓</div>
             : pendingProxies.slice(0, 5).map(p => {
-              const orig = teachersData.find(t => t.id === p.originalTeacherId);
-              const proxy = teachersData.find(t => t.id === p.proxyTeacherId);
+              const orig = teachers.find(t => t.id === p.originalTeacherId);
+              const proxy = teachers.find(t => t.id === p.proxyTeacherId);
               return (
                 <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-3">
                   <div>
@@ -395,13 +399,14 @@ function PrincipalDashboard() {
 function TeacherDashboard() {
   const navigate = useNavigate();
   const { teacherId, userProfile } = useAuth();
+  const { teachers } = useTeachers();
   const [assignments, setAssignments] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const teacher = useMemo(
-    () => teachersData.find(t => t.id === teacherId || t.email === userProfile?.email),
-    [teacherId, userProfile?.email]
+    () => teachers.find(t => t.id === teacherId || t.email === userProfile?.email),
+    [teachers, teacherId, userProfile?.email]
   );
 
   useEffect(() => {

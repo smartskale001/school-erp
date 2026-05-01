@@ -40,8 +40,8 @@ import {
 } from "@/modules/timetable/services/timetableFirebaseService";
 import { useClasses } from "@/core/context/ClassesContext";
 import { useAuth } from "@/core/context/AuthContext";
-import subjectsData from "@/data/subjects.json";
-import teachersData from "@/data/teachers.json";
+import { useSubjects } from "@/core/hooks/useSubjects";
+import { useTeachers } from "@/core/hooks/useTeachers";
 
 export const days = DEFAULT_DAYS;
 // Module-level export so other pages can import periods without triggering component re-renders.
@@ -67,14 +67,16 @@ function normalizeGridsForPeriods(savedGrids, periods) {
 export default function TimetablePage() {
   const { classOptions } = useClasses();
   const { isTeacher, teacherId, user } = useAuth();
+  const { subjects } = useSubjects();
+  const { teachers } = useTeachers();
 
   // Periods are derived from the ClassTimeManagement localStorage slots
   const [periods] = useState(() => getPeriodsFromSlots());
 
   const myTeacherRecord = React.useMemo(() => {
     if (!isTeacher) return null;
-    return teachersData.find((t) => t.id === teacherId || t.email === user?.email) || null;
-  }, [isTeacher, teacherId, user?.email]);
+    return teachers.find((t) => t.id === teacherId || t.email === user?.email) || null;
+  }, [isTeacher, teacherId, user?.email, teachers]);
 
   const [selectedClass, setSelectedClass] = useState("");
   const [view, setView] = useState(isTeacher ? "teacher" : "class");
@@ -83,7 +85,6 @@ export default function TimetablePage() {
   const [dialog, setDialog] = useState({ open: false, pi: null, di: null });
   const [assignSubject, setAssignSubject] = useState("");
   const [assignTeacher, setAssignTeacher] = useState("");
-  const [teachers, setTeachers] = useState(teachersData);
   const [isDirty, setIsDirty] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(null);
   const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
@@ -114,11 +115,6 @@ export default function TimetablePage() {
       }
       setDbLoading(false);
 
-      const tSaved = sessionStorage.getItem("erp_teacher_assignments");
-      if (tSaved) {
-        try { setTeachers(JSON.parse(tSaved)); } catch {}
-      }
-
       if (isTeacher) {
         setHasLoadedPrefs(true);
         return;
@@ -146,10 +142,6 @@ export default function TimetablePage() {
     }
     setIsDirty(true);
   }, [gridsByClass, dbLoading]);
-
-  useEffect(() => {
-    sessionStorage.setItem("erp_teacher_assignments", JSON.stringify(teachers));
-  }, [teachers]);
 
   useEffect(() => {
     if (!hasLoadedPrefs) return;
@@ -197,7 +189,7 @@ export default function TimetablePage() {
       { bg: "#E0E7FF", border: "#818CF8", text: "#3730A3" },
       { bg: "#FCE7F3", border: "#F472B6", text: "#9D174D" },
     ];
-    return subjectsData.reduce((acc, subject, index) => {
+    return subjects.reduce((acc, subject, index) => {
       acc[subject.name] = palette[index % palette.length];
       return acc;
     }, {});
@@ -231,8 +223,8 @@ export default function TimetablePage() {
       gridsForValidation = { ...gridsByClass, [selectedClass]: tempGrid };
     }
 
-    if (!canAssignSubjectForClass({ subjectsData, gridsByClass: gridsForValidation, classKey: selectedClass, subjectName: payload.subject })) {
-      const status = getAvailabilityStatus({ subjectsData, gridsByClass: gridsForValidation, selectedClass, subjectName: payload.subject });
+    if (!canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: gridsForValidation, classKey: selectedClass, subjectName: payload.subject })) {
+      const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: gridsForValidation, selectedClass, subjectName: payload.subject });
       alert(`Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or global availability limit reached.`);
       return;
     }
@@ -291,7 +283,7 @@ export default function TimetablePage() {
   const unassignedCount = grid.flat().filter((c) => c?.type === "empty").length;
 
   const missingTeacherSubjects = selectedClass
-    ? getSubjectsForClass(subjectsData, selectedClass.split("-")[0]).filter(
+    ? getSubjectsForClass(subjects, selectedClass.split("-")[0]).filter(
         (subject) => getTeachersForSubject(teachers, subject, selectedClass.split("-")[0]).length === 0
       )
     : [];
@@ -312,8 +304,8 @@ export default function TimetablePage() {
     if (!assignSubject || !assignTeacher || !selectedClass) return;
     if (dialog.di === null || dialog.di === undefined) return;
 
-    if (!canAssignSubjectForClass({ subjectsData, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject })) {
-      const status = getAvailabilityStatus({ subjectsData, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
+    if (!canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject })) {
+      const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
       alert(`Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or global availability limit reached.`);
       return;
     }
@@ -349,7 +341,7 @@ export default function TimetablePage() {
   const handleAutoAssign = () => {
     if (!selectedClass) return;
     setGridsByClass((prev) =>
-      autoAssignForClass({ selectedClass, gridsByClass: prev, periods, days, subjectsData, teachersData: teachers, isHolidayDay })
+      autoAssignForClass({ selectedClass, gridsByClass: prev, periods, days, subjectsData: subjects, teachersData: teachers, isHolidayDay })
     );
   };
 
@@ -357,7 +349,7 @@ export default function TimetablePage() {
     const classKeys = new Set(Object.keys(gridsByClass));
     if (selectedClass) classKeys.add(selectedClass);
     const violations = Array.from(classKeys).flatMap((classKey) =>
-      getSubjectRuleViolationsForClass({ classKey, gridsByClass, subjectsData, days, getSubjectsForClass, isHolidayDay })
+      getSubjectRuleViolationsForClass({ classKey, gridsByClass, subjectsData: subjects, days, getSubjectsForClass, isHolidayDay })
     );
     if (violations.length > 0) {
       const preview = violations
@@ -373,7 +365,6 @@ export default function TimetablePage() {
 
     try {
       await saveTimetableToDb(gridsByClass);
-      sessionStorage.setItem("erp_teacher_assignments", JSON.stringify(teachers));
       setIsDirty(false);
       alert("Timetable published and saved to database.");
     } catch {
@@ -615,7 +606,7 @@ export default function TimetablePage() {
                 <div className="text-sm font-semibold text-gray-900 mt-1">Subjects & Teachers</div>
                 <div className="mt-3 space-y-2 max-h-[70vh] overflow-y-auto pr-1">
                   {selectedClass &&
-                    getSubjectsForClass(subjectsData, selectedClass.split("-")[0]).map((subject) => {
+                    getSubjectsForClass(subjects, selectedClass.split("-")[0]).map((subject) => {
                       const teachersForSubject = getTeachersForSubject(teachers, subject, selectedClass.split("-")[0]);
                       const colors = getSubjectColors(subject);
                       if (teachersForSubject.length === 0) {
@@ -673,15 +664,15 @@ export default function TimetablePage() {
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-300 shadow-lg rounded-lg z-[200]">
                 {selectedClass &&
-                  getSubjectsForClass(subjectsData, selectedClass.split("-")[0]).map((s) => (
+                  getSubjectsForClass(subjects, selectedClass.split("-")[0]).map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
               </SelectContent>
             </Select>
             {assignSubject && selectedClass && (
-              <div className={`mt-2 text-xs p-2 rounded ${canAssignSubjectForClass({ subjectsData, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }) ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              <div className={`mt-2 text-xs p-2 rounded ${canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }) ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                 {(() => {
-                  const status = getAvailabilityStatus({ subjectsData, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
+                  const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
                   const usedDay = dialog.di !== null ? getUsedPeriodsForSubjectInClassDay(dialogGridForValidation, selectedClass, assignSubject, dialog.di) : 0;
                   return `Availability: ${status.used}/${status.available} • Class: ${status.usedClass}/${SUBJECT_MAX_PERIODS} • Day: ${usedDay}/${SUBJECT_MAX_PER_DAY}`;
                 })()}
@@ -740,14 +731,14 @@ export default function TimetablePage() {
             <button
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
                 !assignSubject || !assignTeacher ||
-                (assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }))
+                (assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }))
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"
               }`}
               onClick={handleAssign}
-              disabled={!assignSubject || !assignTeacher || (assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }))}
+              disabled={!assignSubject || !assignTeacher || (assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }))}
             >
-              {assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }) ? "Limit Reached" : "Assign"}
+              {assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }) ? "Limit Reached" : "Assign"}
             </button>
           </DialogFooter>
         </DialogContent>

@@ -8,10 +8,10 @@ import {
   approveProxy,
 } from '@/modules/leave/services/leaveFirebaseService';
 import { useAuth } from '@/core/context/AuthContext';
-import teachersData from '@/data/teachers.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
 import { days, periods } from '@/modules/timetable/pages/TimetablePage';
 
-function getAffectedPeriods(leaveTeacherId, startDate, endDate) {
+function getAffectedPeriods(leaveTeacherId, startDate, endDate, teachers) {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('erp_timetable') || '{}'); } catch {}
 
@@ -22,7 +22,7 @@ function getAffectedPeriods(leaveTeacherId, startDate, endDate) {
   Object.entries(saved).forEach(([classKey, grid]) => {
     grid.forEach((row, pi) => {
       row.forEach((cell, di) => {
-        if (cell?.teacher && cell.teacher === teachersData.find(t => t.id === leaveTeacherId)?.name) {
+        if (cell?.teacher && cell.teacher === teachers.find(t => t.id === leaveTeacherId)?.name) {
           const dayName = days[di];
           const period = periods[pi];
           if (!period || period.break) return;
@@ -53,11 +53,11 @@ function getAffectedPeriods(leaveTeacherId, startDate, endDate) {
   return affected;
 }
 
-function getSuggestedProxies(subject, leaveTeacherId, periodIndex, dayIndex) {
+function getSuggestedProxies(subject, leaveTeacherId, periodIndex, dayIndex, teachers) {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('erp_timetable') || '{}'); } catch {}
 
-  return teachersData
+  return teachers
     .filter((t) => {
       if (t.id === leaveTeacherId) return false;
       if (t.subject !== subject) return false;
@@ -75,6 +75,7 @@ export default function ProxyAssignmentPage() {
   const { leaveId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { teachers } = useTeachers();
   const [leave, setLeave] = useState(null);
   const [affected, setAffected] = useState([]);
   const [existing, setExisting] = useState([]);
@@ -91,7 +92,7 @@ export default function ProxyAssignmentPage() {
       const found = all.find((l) => l.id === leaveId);
       setLeave(found);
       if (found) {
-        const ap = getAffectedPeriods(found.teacherId, found.startDate, found.endDate);
+        const ap = getAffectedPeriods(found.teacherId, found.startDate, found.endDate, teachers);
         setAffected(ap);
         setExisting(proxies.filter((p) => p.leaveId === leaveId));
       }
@@ -136,7 +137,7 @@ export default function ProxyAssignmentPage() {
 
   if (!leave) return <div className="text-gray-500 text-center py-16">Leave not found.</div>;
 
-  const teacher = teachersData.find((t) => t.id === leave.teacherId);
+  const teacher = teachers.find((t) => t.id === leave.teacherId);
   const assignedKeys = new Set(existing.map((p) => `${p.date}-${p.periodLabel}`));
 
   return (
@@ -167,7 +168,7 @@ export default function ProxyAssignmentPage() {
             {affected.map((ap) => {
               const key = `${ap.date}-${ap.periodIndex}-${ap.dayIndex}`;
               const alreadyAssigned = assignedKeys.has(`${ap.date}-${ap.periodLabel}`);
-              const suggestions = getSuggestedProxies(ap.subject, ap.originalTeacherId, ap.periodIndex, ap.dayIndex);
+              const suggestions = getSuggestedProxies(ap.subject, ap.originalTeacherId, ap.periodIndex, ap.dayIndex, teachers);
 
               return (
                 <div

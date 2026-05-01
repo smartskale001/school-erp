@@ -9,7 +9,7 @@ import {
   cancelTask,
   cancelAssignment,
 } from '@/modules/tasks/services/tasksFirebaseService';
-import teachersData from '@/data/teachers.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
 
 const STATUS_CONFIG = {
   not_started: { label: 'Not Started', cls: 'bg-gray-100 text-gray-600' },
@@ -35,6 +35,7 @@ export default function TaskDetailPage() {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const { role } = useAuth();
+  const { teachers } = useTeachers();
   const canManageAllTasks = ['admin', 'principal', 'coordinator'].includes(role);
   const [task, setTask] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -180,7 +181,7 @@ export default function TaskDetailPage() {
 
         <div className="divide-y">
           {assignments.map((a) => {
-            const teacher = teachersData.find((t) => t.id === a.teacherId);
+            const teacher = teachers.find((t) => t.id === a.teacherId);
             const cfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.not_started;
             const transitions = STATUS_TRANSITIONS[a.status] || [];
             const completedAt = a.completedAt?.toDate ? a.completedAt.toDate() : null;

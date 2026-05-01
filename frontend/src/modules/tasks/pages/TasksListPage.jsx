@@ -11,7 +11,7 @@ import {
   cancelAssignment,
   checkAndMarkOverdueTasks,
 } from '@/modules/tasks/services/tasksFirebaseService';
-import teachersData from '@/data/teachers.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
 
 const STATUS_CONFIG = {
   not_started: { label: 'Not Started', cls: 'bg-gray-100 text-gray-600', icon: Clock },
@@ -55,6 +55,7 @@ function PriorityBadge({ priority }) {
 export default function TasksListPage() {
   const navigate = useNavigate();
   const { role, teacherId, user, userProfile } = useAuth();
+  const { teachers } = useTeachers();
   const canManageAllTasks = ['admin', 'principal', 'coordinator'].includes(role);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +71,7 @@ export default function TasksListPage() {
     const email = user?.email?.toLowerCase();
     const displayName = user?.displayName?.toLowerCase();
     const profileName = userProfile?.name?.toLowerCase();
-    const record = teachersData.find((t) =>
+    const record = teachers.find((t) =>
       (email && t.email.toLowerCase() === email) ||
       (displayName && t.name.toLowerCase() === displayName) ||
       (profileName && t.name.toLowerCase() === profileName)
@@ -114,7 +115,7 @@ export default function TasksListPage() {
   };
 
   const handleCancelClick = (assignment) => {
-    const teacher = teachersData.find(t => t.id === assignment.teacherId);
+    const teacher = teachers.find(t => t.id === assignment.teacherId);
     setCancelModal({
       open: true,
       assignmentId: assignment.id,
@@ -228,7 +229,7 @@ export default function TasksListPage() {
         ) : (
           <div className="divide-y">
             {filtered.map((a) => {
-              const teacher = teachersData.find((t) => t.id === a.teacherId);
+              const teacher = teachers.find((t) => t.id === a.teacherId);
               const dueDate = a.task?.dueDate?.toDate
                 ? a.task.dueDate.toDate()
                 : a.task?.dueDate ? new Date(a.task.dueDate) : null;

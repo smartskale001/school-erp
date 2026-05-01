@@ -8,7 +8,6 @@ import {
   approveLeave,
   rejectLeave,
 } from '@/modules/leave/services/leaveFirebaseService';
-import teachersData from '@/data/teachers.json';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', cls: 'bg-yellow-100 text-yellow-700' },

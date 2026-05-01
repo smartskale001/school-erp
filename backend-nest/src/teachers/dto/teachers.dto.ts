@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateTeacherDto {
-  @ApiProperty() @IsString() id: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() id?: string;
   @ApiProperty() @IsString() name: string;
   @ApiProperty() @IsString() shortName: string;
-  @ApiProperty() @IsString() employeeCode: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() employeeCode?: string;
   @ApiProperty() @IsString() email: string;
+  @ApiProperty() @IsString() @MinLength(6) password: string;
   @ApiProperty({ required: false }) @IsString() @IsOptional() phone?: string;
   @ApiProperty({ type: [String] }) @IsArray() subjectIds: string[];
   @ApiProperty({ type: [String] }) @IsArray() subjectNames: string[];

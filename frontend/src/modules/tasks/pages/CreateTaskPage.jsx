@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, User } from 'lucide-react';
 import { useAuth } from '@/core/context/AuthContext';
 import { createTask } from '@/modules/tasks/services/tasksFirebaseService';
-import teachersData from '@/data/teachers.json';
+import { getTeachers } from '@/modules/timetable/services/teachersService';
 
 const SCOPE_OPTIONS = [
   { value: 'individual', label: 'Individual Teachers' },
@@ -15,6 +15,7 @@ export default function CreateTaskPage() {
   const { user, role } = useAuth();
   const canManageAllTasks = ['admin', 'principal', 'coordinator'].includes(role);
 
+  const [teachers, setTeachers] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -27,6 +28,10 @@ export default function CreateTaskPage() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    getTeachers().then(setTeachers).catch(() => {});
+  }, []);
 
   if (!canManageAllTasks) {
     return (
@@ -53,7 +58,7 @@ export default function CreateTaskPage() {
   };
 
   const getAssignees = () => {
-    if (scope === 'all') return teachersData.map((t) => t.id);
+    if (scope === 'all') return teachers.map((t) => t.id);
     return selectedTeachers;
   };
 
@@ -250,7 +255,7 @@ export default function CreateTaskPage() {
 
           {scope === 'all' && (
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
-              This task will be assigned to all <strong>{teachersData.length}</strong> teachers. Each will track status independently.
+              This task will be assigned to all <strong>{teachers.length}</strong> teachers. Each will track status independently.
             </div>
           )}
 
@@ -258,7 +263,7 @@ export default function CreateTaskPage() {
             <div>
               <div className="text-xs text-gray-500 mb-2">{selectedTeachers.length} selected</div>
               <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg divide-y">
-                {teachersData.map((t) => (
+                {teachers.map((t) => (
                   <label
                     key={t.id}
                     className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer"

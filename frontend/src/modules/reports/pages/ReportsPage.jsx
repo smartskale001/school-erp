@@ -9,8 +9,8 @@ import {
 } from '@/modules/reports/services/reportsService';
 import { useAuth } from '@/core/context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import teachersData from '@/data/teachers.json';
-import classesData from '@/data/classes.json';
+import { useTeachers } from '@/core/hooks/useTeachers';
+import { useClasses } from '@/core/context/ClassesContext';
 import { days } from '@/modules/timetable/pages/TimetablePage';
 import { getPeriodsFromSlots } from '@/modules/timetable/periodUtils';
 
@@ -26,6 +26,7 @@ const REPORT_TABS = [
 ];
 
 function TeacherTimetableReport({ periods }) {
+  const { teachers } = useTeachers();
   const [selectedTeacher, setSelectedTeacher] = useState('');
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('erp_timetable') || '{}'); } catch {}
@@ -56,7 +57,7 @@ function TeacherTimetableReport({ periods }) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="">-- Choose Teacher --</option>
-            {teachersData.map((t) => (
+            {teachers.map((t) => (
               <option key={t.id} value={t.name}>{t.name} ({t.subject})</option>
             ))}
           </select>
@@ -105,9 +106,7 @@ function TeacherTimetableReport({ periods }) {
 }
 
 function ClassTimetableReport({ periods }) {
-  const classOptions = classesData.flatMap((c) =>
-    c.sections.map((s) => ({ value: `${c.class}-${s}`, label: `${c.class} - ${s}` }))
-  );
+  const { classOptions } = useClasses();
   const [selectedClass, setSelectedClass] = useState('');
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('erp_timetable') || '{}'); } catch {}
@@ -166,6 +165,7 @@ function ClassTimetableReport({ periods }) {
 }
 
 function LeaveSummaryReport({ leaves }) {
+  const { teachers } = useTeachers();
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-sm">
@@ -178,7 +178,7 @@ function LeaveSummaryReport({ leaves }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {leaves.map((l) => {
-            const teacher = teachersData.find((t) => t.id === l.teacherId);
+            const teacher = teachers.find((t) => t.id === l.teacherId);
             const statusCls = { pending: 'bg-yellow-100 text-yellow-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700' };
             return (
               <tr key={l.id} className="hover:bg-gray-50">
@@ -205,6 +205,7 @@ function LeaveSummaryReport({ leaves }) {
 }
 
 function TaskSummaryReport({ assignments }) {
+  const { teachers } = useTeachers();
   const STATUS_CLS = {
     not_started: 'bg-gray-100 text-gray-600',
     in_progress: 'bg-blue-100 text-blue-700',
@@ -225,7 +226,7 @@ function TaskSummaryReport({ assignments }) {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {assignments.map((a) => {
-            const teacher = teachersData.find((t) => t.id === a.teacherId);
+            const teacher = teachers.find((t) => t.id === a.teacherId);
             const due = a.task?.dueDate?.toDate ? a.task.dueDate.toDate() : a.task?.dueDate ? new Date(a.task.dueDate) : null;
             const prioCls = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' };
             return (
@@ -418,10 +419,11 @@ function OverdueTasksReport() {
 }
 
 function WorkloadReport({ periods }) {
+  const { teachers } = useTeachers();
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('erp_timetable') || '{}'); } catch {}
 
-  const workload = teachersData.map((t) => {
+  const workload = teachers.map((t) => {
     let total = 0;
     const byDay = {};
     days.forEach((d) => { byDay[d] = 0; });
