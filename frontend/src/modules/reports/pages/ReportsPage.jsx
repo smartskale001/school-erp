@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart3, Users, BookOpen, CalendarOff, ClipboardList, Clock, AlertCircle } from 'lucide-react';
-import { getAllAssignmentsWithTasks } from '@/modules/tasks/services/tasksFirebaseService';
-import { getLeaveApplications } from '@/modules/leave/services/leaveFirebaseService';
+import { getAllAssignmentsWithTasks } from '@/modules/tasks/services/tasksService';
+import { getLeaveApplications } from '@/modules/leave/services/leaveService';
 import { 
   fetchSubstitutionReport, 
   fetchPendingTasksReport, 

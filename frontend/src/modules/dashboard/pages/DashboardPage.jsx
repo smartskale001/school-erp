@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
-import { getAllAssignmentsWithTasks, getAssignmentsForTeacher } from '@/modules/tasks/services/tasksFirebaseService';
-import { getLeaveApplications, getLeaveApplicationsForTeacher, getProxyAssignments, approveLeave, approveProxy } from '@/modules/leave/services/leaveFirebaseService';
+import { getAllAssignmentsWithTasks, getAssignmentsForTeacher } from '@/modules/tasks/services/tasksService';
+import { getLeaveApplications, getLeaveApplicationsForTeacher, getProxyAssignments, approveLeave, approveProxy } from '@/modules/leave/services/leaveService';
 import { useTeachers } from '@/core/hooks/useTeachers';
 import { useClasses } from '@/core/context/ClassesContext';
 import { days, periods } from '@/modules/timetable/pages/TimetablePage';

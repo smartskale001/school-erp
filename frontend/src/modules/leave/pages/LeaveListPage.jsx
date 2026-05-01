@@ -7,7 +7,7 @@ import {
   getLeaveApplicationsForTeacher,
   approveLeave,
   rejectLeave,
-} from '@/modules/leave/services/leaveFirebaseService';
+} from '@/modules/leave/services/leaveService';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', cls: 'bg-yellow-100 text-yellow-700' },

@@ -37,7 +37,7 @@ import { getPeriodsFromSlots, DEFAULT_DAYS } from "@/modules/timetable/periodUti
 import {
   saveTimetableToDb,
   loadTimetableFromDb,
-} from "@/modules/timetable/services/timetableFirebaseService";
+} from "@/modules/timetable/services/timetableService";
 import { useClasses } from "@/core/context/ClassesContext";
 import { useAuth } from "@/core/context/AuthContext";
 import { useSubjects } from "@/core/hooks/useSubjects";
@@ -87,11 +87,27 @@ export default function TimetablePage() {
   const [assignTeacher, setAssignTeacher] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(null);
+  const [noticeDialog, setNoticeDialog] = useState({ open: false, title: "", message: "", tone: "info" });
+  const [publishDialog, setPublishDialog] = useState({ open: false, effectiveFrom: "", effectiveTo: "", error: "" });
   const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
   const [dbLoading, setDbLoading] = useState(true);
   const isFirstLoad = useRef(true);
 
-  // Load from Firestore on mount, fall back to localStorage
+  const showNotice = useCallback((title, message, tone = "info") => {
+    setNoticeDialog({ open: true, title, message, tone });
+  }, []);
+
+  const openPublishDialog = useCallback(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setPublishDialog((prev) => ({
+      open: true,
+      effectiveFrom: prev.effectiveFrom || today,
+      effectiveTo: prev.effectiveTo || today,
+      error: "",
+    }));
+  }, []);
+
+  // Load from the API on mount, fall back to localStorage
   useEffect(() => {
     async function init() {
       setDbLoading(true);
@@ -210,7 +226,7 @@ export default function TimetablePage() {
     const booked = getBookedTeachersForSlot(gridsByClass, pi, di);
     const currentTeacher = cell?.teacher;
     if (booked.has(payload.teacher) && payload.teacher !== currentTeacher) {
-      alert(`${payload.teacher} is already booked for this slot.`);
+      showNotice("Teacher Unavailable", `${payload.teacher} is already booked for this slot.`, "warning");
       return;
     }
 
@@ -225,11 +241,19 @@ export default function TimetablePage() {
 
     if (!canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: gridsForValidation, classKey: selectedClass, subjectName: payload.subject })) {
       const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: gridsForValidation, selectedClass, subjectName: payload.subject });
-      alert(`Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or global availability limit reached.`);
+      showNotice(
+        "Subject Limit Reached",
+        `Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or the global availability limit has been reached.`,
+        "warning"
+      );
       return;
     }
     if (!canAssignSubjectForClassDay({ gridsByClass: gridsForValidation, classKey: selectedClass, subjectName: payload.subject, dayIndex: di })) {
-      alert(`Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PER_DAY} periods per day for a class.`);
+      showNotice(
+        "Daily Subject Limit Reached",
+        `Cannot assign ${payload.subject}. Max ${SUBJECT_MAX_PER_DAY} periods per day for a class.`,
+        "warning"
+      );
       return;
     }
     setGridsByClass((prev) => {
@@ -306,11 +330,19 @@ export default function TimetablePage() {
 
     if (!canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject })) {
       const status = getAvailabilityStatus({ subjectsData: subjects, gridsByClass: dialogGridForValidation, selectedClass, subjectName: assignSubject });
-      alert(`Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or global availability limit reached.`);
+      showNotice(
+        "Subject Limit Reached",
+        `Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PERIODS} periods per class (currently ${status.usedClass}), or the global availability limit has been reached.`,
+        "warning"
+      );
       return;
     }
     if (!canAssignSubjectForClassDay({ gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject, dayIndex: dialog.di })) {
-      alert(`Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PER_DAY} periods per day for a class (already ${getUsedPeriodsForSubjectInClassDay(dialogGridForValidation, selectedClass, assignSubject, dialog.di)}).`);
+      showNotice(
+        "Daily Subject Limit Reached",
+        `Cannot assign ${assignSubject}. Max ${SUBJECT_MAX_PER_DAY} periods per day for a class (already ${getUsedPeriodsForSubjectInClassDay(dialogGridForValidation, selectedClass, assignSubject, dialog.di)}).`,
+        "warning"
+      );
       return;
     }
 
@@ -345,7 +377,7 @@ export default function TimetablePage() {
     );
   };
 
-  const handlePublish = async () => {
+  const validateBeforePublish = useCallback(() => {
     const classKeys = new Set(Object.keys(gridsByClass));
     if (selectedClass) classKeys.add(selectedClass);
     const violations = Array.from(classKeys).flatMap((classKey) =>
@@ -357,21 +389,41 @@ export default function TimetablePage() {
         .map((v) => (v.day ? `${v.classKey}: ${v.subject} (${v.used}) on ${v.day}` : `${v.classKey}: ${v.subject} (${v.used})`))
         .join("\n");
       const more = violations.length > 10 ? `\n...and ${violations.length - 10} more` : "";
-      alert(
-        `Cannot publish. Each subject must have ${SUBJECT_MIN_PERIODS}-${SUBJECT_MAX_PERIODS} periods per class and max ${SUBJECT_MAX_PER_DAY} per day.\n${preview}${more}`
+      showNotice(
+        "Publish Blocked",
+        `Cannot publish. Each subject must have ${SUBJECT_MIN_PERIODS}-${SUBJECT_MAX_PERIODS} periods per class and max ${SUBJECT_MAX_PER_DAY} per day.\n${preview}${more}`,
+        "warning"
       );
+      return false;
+    }
+    return true;
+  }, [gridsByClass, selectedClass, subjects, showNotice]);
+
+  const handlePublish = useCallback(async () => {
+    const { effectiveFrom, effectiveTo } = publishDialog;
+    if (!effectiveFrom || !effectiveTo) {
+      setPublishDialog((prev) => ({ ...prev, error: "Please select both start and end dates." }));
+      return;
+    }
+    if (effectiveTo < effectiveFrom) {
+      setPublishDialog((prev) => ({ ...prev, error: "End date must be on or after the start date." }));
       return;
     }
 
     try {
-      await saveTimetableToDb(gridsByClass);
+      await saveTimetableToDb(gridsByClass, { effectiveFrom, effectiveTo });
       setIsDirty(false);
-      alert("Timetable published and saved to database.");
+      setPublishDialog((prev) => ({ ...prev, open: false, error: "" }));
+      showNotice(
+        "Timetable Published",
+        `Timetable published and saved to the database for ${effectiveFrom} to ${effectiveTo}.`,
+        "success"
+      );
     } catch {
-      alert("Published locally (database save failed — check your connection).");
+      showNotice("Published Locally", "Published locally, but saving to the database failed. Please check your connection.", "warning");
       setIsDirty(false);
     }
-  };
+  }, [gridsByClass, publishDialog, showNotice]);
 
   const isClassSelected = !!selectedClass;
   const isTeacherSelected = !!selectedTeacher;
@@ -456,7 +508,9 @@ export default function TimetablePage() {
             </button>
             <button
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${isDirty ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-              onClick={handlePublish}
+              onClick={() => {
+                if (validateBeforePublish()) openPublishDialog();
+              }}
             >
               <Save size={14} />
               Publish Timetable
@@ -739,6 +793,89 @@ export default function TimetablePage() {
               disabled={!assignSubject || !assignTeacher || (assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }))}
             >
               {assignSubject && selectedClass && !canAssignSubjectForClass({ subjectsData: subjects, gridsByClass: dialogGridForValidation, classKey: selectedClass, subjectName: assignSubject }) ? "Limit Reached" : "Assign"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={publishDialog.open} onOpenChange={(open) => setPublishDialog((prev) => ({ ...prev, open, error: open ? prev.error : "" }))}>
+        <DialogContent className="bg-white border border-gray-200 shadow-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Publish Timetable</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Choose the date range during which this timetable should be treated as the published version.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Effective from</label>
+                <input
+                  type="date"
+                  value={publishDialog.effectiveFrom}
+                  onChange={(e) => setPublishDialog((prev) => ({ ...prev, effectiveFrom: e.target.value, error: "" }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Effective to</label>
+                <input
+                  type="date"
+                  value={publishDialog.effectiveTo}
+                  min={publishDialog.effectiveFrom || undefined}
+                  onChange={(e) => setPublishDialog((prev) => ({ ...prev, effectiveTo: e.target.value, error: "" }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            {publishDialog.error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {publishDialog.error}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <button
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 mr-2"
+              onClick={() => setPublishDialog((prev) => ({ ...prev, open: false, error: "" }))}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-lg bg-blue-600 text-sm font-medium text-white hover:bg-blue-700"
+              onClick={handlePublish}
+            >
+              Publish
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={noticeDialog.open} onOpenChange={(open) => setNoticeDialog((prev) => ({ ...prev, open }))}>
+        <DialogContent className="bg-white border border-gray-200 shadow-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span
+                className={`inline-block h-2.5 w-2.5 rounded-full ${
+                  noticeDialog.tone === "success"
+                    ? "bg-emerald-500"
+                    : noticeDialog.tone === "warning"
+                      ? "bg-amber-500"
+                      : "bg-blue-500"
+                }`}
+              />
+              {noticeDialog.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="whitespace-pre-line text-sm text-gray-600">
+            {noticeDialog.message}
+          </div>
+          <DialogFooter>
+            <button
+              className="px-4 py-2 rounded-lg bg-blue-600 text-sm font-medium text-white hover:bg-blue-700"
+              onClick={() => setNoticeDialog((prev) => ({ ...prev, open: false }))}
+            >
+              OK
             </button>
           </DialogFooter>
         </DialogContent>

@@ -6,10 +6,11 @@ import { LeaveApplicationEntity } from '../database/entities/leave-application.e
 import { ProxyAssignmentEntity } from '../database/entities/proxy-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
+import { EmailService } from '../tasks/email.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity, UserEntity])],
-  providers: [LeaveService],
+  providers: [LeaveService, EmailService],
   controllers: [LeaveController],
   exports: [LeaveService],
 })

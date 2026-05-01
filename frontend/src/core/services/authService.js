@@ -34,7 +34,7 @@ async function post(path, body, token = null) {
   return json;
 }
 
-// ─── Public API (same shape as old Firebase authService) ─────────────────────
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 export const authService = {
   signup: async (name, email, password, role = 'student', teacherId = null) => {
@@ -117,7 +117,7 @@ export const authService = {
     return raw ? JSON.parse(raw) : null;
   },
 
-  // Mirrors Firebase onAuthStateChanged — calls callback immediately with stored user
+  // Calls the callback immediately with the stored user profile
   onAuthChange: (callback) => {
     const raw = localStorage.getItem('user_profile');
     const user = raw ? JSON.parse(raw) : null;

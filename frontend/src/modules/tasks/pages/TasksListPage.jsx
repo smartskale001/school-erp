@@ -10,7 +10,7 @@ import {
   cancelTaskAll,
   cancelAssignment,
   checkAndMarkOverdueTasks,
-} from '@/modules/tasks/services/tasksFirebaseService';
+} from '@/modules/tasks/services/tasksService';
 import { useTeachers } from '@/core/hooks/useTeachers';
 
 const STATUS_CONFIG = {

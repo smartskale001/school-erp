@@ -20,6 +20,12 @@ export class TimetableEntity {
   @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
   publishedAt: Date;
 
+  @Column({ name: 'effective_from', type: 'date', nullable: true })
+  effectiveFrom: string;
+
+  @Column({ name: 'effective_to', type: 'date', nullable: true })
+  effectiveTo: string;
+
   @Column({ name: 'published_by', nullable: true })
   publishedBy: string;
 

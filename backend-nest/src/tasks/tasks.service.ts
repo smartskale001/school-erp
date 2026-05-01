@@ -5,7 +5,7 @@ import { TaskEntity, TaskStatus } from '../database/entities/task.entity';
 import { TaskAssignmentEntity, TaskAssignmentStatus } from '../database/entities/task-assignment.entity';
 import { CreateTaskDto, UpdateTaskDto, UpdateAssignmentStatusDto } from './dto/tasks.dto';
 import { TeacherEntity } from '../database/entities/teacher.entity';
-import { EmailService } from '../notifications/email.service';
+import { EmailService } from './email.service';
 import { Role } from '../common/enums/role.enum';
 
 interface CurrentUser {

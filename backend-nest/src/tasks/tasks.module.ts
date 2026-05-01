@@ -5,7 +5,7 @@ import { TasksController } from './tasks.controller';
 import { TaskEntity } from '../database/entities/task.entity';
 import { TaskAssignmentEntity } from '../database/entities/task-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
-import { EmailService } from '../notifications/email.service';
+import { EmailService } from './email.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TaskEntity, TaskAssignmentEntity, TeacherEntity])],

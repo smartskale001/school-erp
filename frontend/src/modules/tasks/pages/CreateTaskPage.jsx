@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/core/context/AuthContext';
-import { createTask } from '@/modules/tasks/services/tasksFirebaseService';
+import { createTask } from '@/modules/tasks/services/tasksService';
 import { getTeachers } from '@/modules/timetable/services/teachersService';
 import { useClasses } from '@/core/context/ClassesContext';
 import { useSubjects } from '@/core/hooks/useSubjects';

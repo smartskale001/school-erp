@@ -1,7 +1,3 @@
-/**
- * Leave service — replaced Firebase with REST API calls.
- * Function signatures preserved so existing callers need no changes.
- */
 import { apiRequest } from '@/core/api/client';
 import { API_ENDPOINTS } from '@/core/api/endpoints';
 

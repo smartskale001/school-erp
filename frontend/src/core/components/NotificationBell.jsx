@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, CheckCheck, CalendarOff, ClipboardList, UserCheck } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
-import { getLeaveApplications, getProxyAssignments } from "@/modules/leave/services/leaveFirebaseService";
-import { getAllAssignmentsWithTasks } from "@/modules/tasks/services/tasksFirebaseService";
+import { getLeaveApplications, getProxyAssignments } from "@/modules/leave/services/leaveService";
+import { getAllAssignmentsWithTasks } from "@/modules/tasks/services/tasksService";
 import { useNavigate } from "react-router-dom";
 
 function useNotifications() {

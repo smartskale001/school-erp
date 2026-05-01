@@ -1,5 +1,5 @@
 /**
- * Seed script — replicates all Firestore collections into PostgreSQL.
+ * Seed script — populates PostgreSQL with reference data.
  * Run: npm run seed
  */
 import 'reflect-metadata';

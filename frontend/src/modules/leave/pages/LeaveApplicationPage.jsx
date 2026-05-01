@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/core/context/AuthContext';
-import { submitLeaveApplication } from '@/modules/leave/services/leaveFirebaseService';
+import { submitLeaveApplication } from '@/modules/leave/services/leaveService';
 import { useTeachers } from '@/core/hooks/useTeachers';
 
 const LEAVE_TYPES = ['sick', 'casual', 'emergency', 'other'];

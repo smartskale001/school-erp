@@ -5,9 +5,16 @@ import { TimetableEntity } from '../database/entities/timetable.entity';
 import { TimetableSettingsEntity } from '../database/entities/timetable-settings.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { SaveTimetableDto, SaveTimetableSettingsDto } from './dto/timetable.dto';
-import { EmailService } from '../notifications/email.service';
+import { EmailService } from '../tasks/email.service';
 
 interface CurrentUser { id: string; }
+
+function normalizeEffectiveDates(dto: SaveTimetableDto) {
+  return {
+    effectiveFrom: dto.effectiveFrom || null,
+    effectiveTo: dto.effectiveTo || null,
+  };
+}
 
 @Injectable()
 export class TimetableService {
@@ -37,7 +44,12 @@ export class TimetableService {
     const schoolId = dto.schoolId || 'school_001';
     // Upsert: deactivate existing active timetable and create a new draft
     await this.repo.update({ schoolId, isActive: true }, { isActive: false });
-    const entity = this.repo.create({ grids: dto.grids, schoolId, isActive: false });
+    const entity = this.repo.create({
+      grids: dto.grids,
+      schoolId,
+      isActive: false,
+      ...normalizeEffectiveDates(dto),
+    });
     return this.repo.save(entity);
   }
 
@@ -99,6 +111,7 @@ export class TimetableService {
       isActive: true,
       publishedAt: new Date(),
       publishedBy: user.id,
+      ...normalizeEffectiveDates(dto),
     });
     const saved = await this.repo.save(entity);
 

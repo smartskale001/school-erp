@@ -13,7 +13,7 @@ import { getTimetableRules, saveTimetableRules, DEFAULT_RULES } from "@/modules/
 import {
   loadTimetableSettings,
   saveTimetableSettings,
-} from "@/modules/timetable/services/timetableFirebaseService";
+} from "@/modules/timetable/services/timetableService";
 
 const SLOTS_KEY = "erp_period_slots";
 
