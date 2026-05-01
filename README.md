@@ -60,9 +60,14 @@ npm run start:dev             # http://localhost:4000/api
 
 **Swagger UI:** `http://localhost:4000/api/docs`
 
-**Seed initial data** (subjects, teachers, classes, rooms, periods):
+**Seed initial data** (subjects, teachers, classes, rooms, periods, and teacher login accounts):
 ```sh
 npm run seed
+```
+
+Use a custom default password for seeded teacher accounts:
+```sh
+TEACHER_SEED_PASSWORD=Teacher@123 npm run seed
 ```
 
 ### 2. Frontend
@@ -184,7 +189,7 @@ Roles are stored in the `users` table and encoded in the JWT. Use `POST /auth/us
 npm run start:dev   # watch mode
 npm run build       # compile to dist/
 npm run start       # run compiled dist/main.js
-npm run seed        # seed reference data into PostgreSQL
+npm run seed        # seed reference data and teacher login accounts into PostgreSQL
 ```
 
 ### Frontend
