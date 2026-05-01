@@ -164,20 +164,7 @@ export default function TimetablePage() {
     sessionStorage.setItem("erp_timetable_prefs", JSON.stringify({ selectedClass, view }));
   }, [selectedClass, view, hasLoadedPrefs]);
 
-  // Warn on browser close/refresh when there are unpublished changes
-  useEffect(() => {
-    if (isTeacher) return;
-    const handler = (e) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty, isTeacher]);
-
-  // Intercept NavLink clicks when dirty
+  // Intercept in-app navigation when dirty
   useEffect(() => {
     if (isTeacher || !isDirty) return;
     const handleClick = (e) => {
