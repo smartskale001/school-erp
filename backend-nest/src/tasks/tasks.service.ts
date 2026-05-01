@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { TaskEntity, TaskStatus } from '../database/entities/task.entity';
 import { TaskAssignmentEntity, TaskAssignmentStatus } from '../database/entities/task-assignment.entity';
 import { CreateTaskDto, UpdateTaskDto, UpdateAssignmentStatusDto } from './dto/tasks.dto';
+import { TeacherEntity } from '../database/entities/teacher.entity';
+import { EmailService } from '../notifications/email.service';
 import { Role } from '../common/enums/role.enum';
 
 interface CurrentUser {
@@ -19,6 +21,9 @@ export class TasksService {
     private taskRepo: Repository<TaskEntity>,
     @InjectRepository(TaskAssignmentEntity)
     private assignmentRepo: Repository<TaskAssignmentEntity>,
+    @InjectRepository(TeacherEntity)
+    private teacherRepo: Repository<TeacherEntity>,
+    private emailService: EmailService,
   ) { }
 
   // ─── Tasks ────────────────────────────────────────────────────────────────
@@ -73,6 +78,17 @@ export class TasksService {
         }),
       );
       await this.assignmentRepo.save(assignments);
+
+      // Trigger Email Notifications
+      const teachers = await this.teacherRepo.findByIds(dto.assignedTo);
+      teachers.forEach(teacher => {
+        this.emailService.sendTaskAssignmentNotification(
+          teacher.email,
+          teacher.name,
+          saved.title,
+          saved.dueDate
+        );
+      });
     }
 
     return saved;

@@ -7,6 +7,7 @@ import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
 import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto } from './dto/leave.dto';
 import { Role } from '../common/enums/role.enum';
+import { EmailService } from '../notifications/email.service';
 
 interface CurrentUser { id: string; role: Role; teacherId: string; }
 
@@ -21,6 +22,7 @@ export class LeaveService {
     private teacherRepo: Repository<TeacherEntity>,
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
+    private emailService: EmailService,
   ) {}
 
   private async getTeacherId(user: any): Promise<string> {
@@ -110,60 +112,4 @@ export class LeaveService {
     const leave = await this.findOne(id);
     await this.leaveRepo.update(id, {
       status: LeaveStatus.APPROVED,
-      approvedBy: user.id,
-      approvedAt: new Date(),
-    });
-    return this.findOne(id);
-  }
-
-  async reject(id: string, dto: ReviewLeaveDto, user: CurrentUser) {
-    await this.findOne(id);
-    await this.leaveRepo.update(id, {
-      status: LeaveStatus.REJECTED,
-      approvedBy: user.id,
-      approvedAt: new Date(),
-      remarks: dto.remarks,
-    });
-    return this.findOne(id);
-  }
-
-  // ─── Proxy ────────────────────────────────────────────────────────────────
-
-  findAllProxies() {
-    return this.proxyRepo.find({ order: { createdAt: 'DESC' } });
-  }
-
-  async findProxy(id: string) {
-    const p = await this.proxyRepo.findOne({ where: { id } });
-    if (!p) throw new NotFoundException('Proxy assignment not found');
-    return p;
-  }
-
-  async createProxy(dto: CreateProxyDto, user: CurrentUser) {
-    const entity = this.proxyRepo.create({
-      ...dto,
-      status: ProxyStatus.PENDING,
-    });
-    return this.proxyRepo.save(entity);
-  }
-
-  async approveProxy(id: string, user: CurrentUser) {
-    await this.findProxy(id);
-    await this.proxyRepo.update(id, {
-      status: ProxyStatus.APPROVED,
-      approvedBy: user.id,
-      approvedAt: new Date(),
-    });
-    return this.findProxy(id);
-  }
-
-  async rejectProxy(id: string, user: CurrentUser) {
-    await this.findProxy(id);
-    await this.proxyRepo.update(id, {
-      status: ProxyStatus.REJECTED,
-      approvedBy: user.id,
-      approvedAt: new Date(),
-    });
-    return this.findProxy(id);
-  }
-}
+      approvedBy: user.

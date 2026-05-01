@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TimetableEntity } from '../database/entities/timetable.entity';
 import { TimetableSettingsEntity } from '../database/entities/timetable-settings.entity';
+import { TeacherEntity } from '../database/entities/teacher.entity';
 import { SaveTimetableDto, SaveTimetableSettingsDto } from './dto/timetable.dto';
+import { EmailService } from '../notifications/email.service';
 
 interface CurrentUser { id: string; }
 
@@ -14,6 +16,9 @@ export class TimetableService {
     private repo: Repository<TimetableEntity>,
     @InjectRepository(TimetableSettingsEntity)
     private settingsRepo: Repository<TimetableSettingsEntity>,
+    @InjectRepository(TeacherEntity)
+    private teacherRepo: Repository<TeacherEntity>,
+    private emailService: EmailService,
   ) {}
 
   async getActive(schoolId = 'school_001') {
@@ -47,7 +52,16 @@ export class TimetableService {
       publishedAt: new Date(),
       publishedBy: user.id,
     });
-    return this.repo.findOne({ where: { id } });
+
+    const updated = await this.repo.findOne({ where: { id } });
+
+    // Notify all teachers about the newly published timetable
+    const teachers = await this.teacherRepo.find({ where: { schoolId: tt.schoolId } });
+    teachers.forEach(teacher => {
+      this.emailService.sendTimetablePublishedNotification(teacher.email, teacher.name);
+    });
+
+    return updated;
   }
 
   // ─── Settings ─────────────────────────────────────────────────────────────
@@ -86,6 +100,14 @@ export class TimetableService {
       publishedAt: new Date(),
       publishedBy: user.id,
     });
-    return this.repo.save(entity);
+    const saved = await this.repo.save(entity);
+
+    // Notify all teachers immediately on save & publish
+    const teachers = await this.teacherRepo.find({ where: { schoolId } });
+    teachers.forEach(teacher => {
+      this.emailService.sendTimetablePublishedNotification(teacher.email, teacher.name);
+    });
+
+    return saved;
   }
 }
