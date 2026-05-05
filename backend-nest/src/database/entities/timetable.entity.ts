@@ -29,6 +29,12 @@ export class TimetableEntity {
   @Column({ name: 'published_by', nullable: true })
   publishedBy: string;
 
+  @Column({ name: 'class_id', nullable: true })
+  classId: string;
+
+  @Column({ type: 'varchar', default: 'draft', length: 20 })
+  status: 'draft' | 'published';
+
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 

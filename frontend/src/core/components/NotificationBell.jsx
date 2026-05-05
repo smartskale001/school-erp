@@ -5,6 +5,9 @@ import { getLeaveApplications, getProxyAssignments } from "@/modules/leave/servi
 import { getAllAssignmentsWithTasks } from "@/modules/tasks/services/tasksService";
 import { useNavigate } from "react-router-dom";
 
+import { notificationService } from "@/core/services/notificationService";
+import { MessageSquare } from "lucide-react";
+
 function useNotifications() {
   const { role, teacherId, canApproveLeave, canApproveProxy, canAssignProxy } = useAuth();
   const [items, setItems] = useState([]);
@@ -14,9 +17,25 @@ function useNotifications() {
     if (!role) return;
     const next = [];
     try {
+      // 1. Fetch real notifications from DB
+      const dbNotifications = await notificationService.getNotifications();
+      dbNotifications.forEach((n) => {
+        next.push({
+          id: n.id,
+          dbId: n.id, // mark as DB-backed
+          icon: MessageSquare,
+          color: n.isRead ? "text-gray-400" : "text-emerald-500",
+          label: n.title,
+          message: n.message,
+          path: n.type === "task" ? "/tasks" : "/leave",
+          isRead: n.isRead,
+          createdAt: n.createdAt,
+        });
+      });
+
+      // 2. Fetch system-generated alerts (Virtual)
       if (canApproveLeave || canAssignProxy || canApproveProxy) {
-        const leaves = await getLeaveApplications();
-        const proxies = await getProxyAssignments();
+        const [leaves, proxies] = await Promise.all([getLeaveApplications(), getProxyAssignments()]);
 
         if (canApproveLeave) {
           const pending = leaves.filter((l) => l.status === "pending");
@@ -33,9 +52,7 @@ function useNotifications() {
 
         if (canAssignProxy) {
           const assignedLeaveIds = new Set(proxies.map((p) => p.leaveApplicationId).filter(Boolean));
-          const needsProxy = leaves.filter(
-            (l) => l.status === "approved" && !assignedLeaveIds.has(l.id)
-          );
+          const needsProxy = leaves.filter((l) => l.status === "approved" && !assignedLeaveIds.has(l.id));
           if (needsProxy.length) {
             next.push({
               id: "proxy-needed",
@@ -61,6 +78,7 @@ function useNotifications() {
         }
       }
 
+      // 3. Add existing virtual task alerts
       const assignments = await getAllAssignmentsWithTasks();
       const now = new Date();
       if (role === "teacher" && teacherId) {
@@ -97,25 +115,36 @@ function useNotifications() {
           });
         }
       }
-    } catch {
-      // silently ignore network errors
-    }
+    } catch (e) { console.error(e); }
+
+    // Sort by date (DB notifications have createdAt, virtual ones don't, so put virtual on top)
+    next.sort((a, b) => {
+      if (!a.createdAt) return -1;
+      if (!b.createdAt) return 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     setItems(next);
     setLoading(false);
   }, [role, teacherId, canApproveLeave, canApproveProxy, canAssignProxy]);
 
   useEffect(() => {
     load();
-    const timer = setInterval(load, 60_000);
+    const timer = setInterval(load, 30_000);
     return () => clearInterval(timer);
   }, [load]);
 
-  return { items, loading, refresh: load };
+  const markAsRead = async (id) => {
+    await notificationService.markAsRead(id);
+    load();
+  };
+
+  return { items, loading, refresh: load, markAsRead };
 }
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { items, loading } = useNotifications();
+  const { items, loading, markAsRead } = useNotifications();
   const ref = useRef(null);
   const navigate = useNavigate();
 
@@ -169,14 +198,29 @@ export default function NotificationBell() {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setOpen(false);
+                      if (item.dbId && !item.isRead) {
+                        await markAsRead(item.dbId);
+                      }
                       navigate(item.path);
                     }}
-                    className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                    className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
+                      item.dbId && !item.isRead ? "bg-emerald-50/30" : ""
+                    }`}
                   >
                     <Icon size={16} className={`mt-0.5 shrink-0 ${item.color}`} />
-                    <span className="text-sm text-gray-700">{item.label}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-700">{item.label}</div>
+                      {item.message && (
+                        <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                          {item.message}
+                        </div>
+                      )}
+                    </div>
+                    {item.dbId && !item.isRead && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5" />
+                    )}
                   </button>
                 );
               })

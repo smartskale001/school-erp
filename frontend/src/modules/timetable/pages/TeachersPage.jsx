@@ -11,6 +11,7 @@ import {
   deleteTeacher,
 } from "../services/teachersService";
 import { useClasses } from "@/core/context/ClassesContext";
+import { useAuth } from "@/core/context/AuthContext";
 import { Button } from "@/core/components/Button";
 import { Input } from "@/core/components/Input";
 import { Card } from "@/core/components/Card";
@@ -36,6 +37,7 @@ export default function TeachersPage() {
   }
   // Teachers state is loaded from service for modularity and backend readiness
   const { classes } = useClasses();
+  const { role } = useAuth();
   const [teachers, setTeachers] = useState([]);
   // Load teachers on mount
   React.useEffect(() => {
@@ -201,15 +203,17 @@ export default function TeachersPage() {
       {tab === "list" && (
         <>
           <div className="mb-4 flex gap-2 items-end">
-            <button
-              className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 flex items-center gap-2"
-              onClick={() => {
-                resetForm();
-                setIsAddOpen(true);
-              }}
-            >
-              <Plus size={16} /> Add Teacher
-            </button>
+            {role !== 'coordinator' && (
+              <button
+                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 flex items-center gap-2"
+                onClick={() => {
+                  resetForm();
+                  setIsAddOpen(true);
+                }}
+              >
+                <Plus size={16} /> Add Teacher
+              </button>
+            )}
             <div className="flex-1 max-w-md">
               <Input
                 type="text"
@@ -236,30 +240,32 @@ export default function TeachersPage() {
                   <div className="text-gray-700">
                     {t.classes && t.classes.length ? t.classes.join(", ") : "—"}
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                      onClick={() => handleEdit(t)}
-                    >
-                      <Pencil size={14} /> Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-gray-600 hover:text-gray-700 flex items-center gap-1"
-                      onClick={() => handleClone(t)}
-                    >
-                      <Copy size={14} /> Clone
-                    </button>
-                    <button
-                      type="button"
-                      className="text-red-600 hover:text-red-700 flex items-center gap-1"
-                      onClick={() => handleDelete(t.id)}
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
+                    {role !== 'coordinator' && (
+                      <div className="flex items-center gap-4 text-sm">
+                        <button
+                          type="button"
+                          className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                          onClick={() => handleEdit(t)}
+                        >
+                          <Pencil size={14} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="text-gray-600 hover:text-gray-700 flex items-center gap-1"
+                          onClick={() => handleClone(t)}
+                        >
+                          <Copy size={14} /> Clone
+                        </button>
+                        <button
+                          type="button"
+                          className="text-red-600 hover:text-red-700 flex items-center gap-1"
+                          onClick={() => handleDelete(t.id)}
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
               ))}
               {!filtered.length ? (
                 <div className="px-4 py-6 text-sm text-gray-500">No teachers found.</div>

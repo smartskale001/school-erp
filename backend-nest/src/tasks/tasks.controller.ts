@@ -44,9 +44,8 @@ export class TasksController {
   assignmentsForTask(@Param('id') id: string) { return this.svc.getAssignmentsForTask(id); }
 
   @Post()
-  @UseGuards(RolesGuard)
-  @MinRole(Role.COORDINATOR)
-  @ApiOperation({ summary: 'Create task and assignments (coordinator+)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Create task and assignments (admin only)' })
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: './uploads',
@@ -75,25 +74,29 @@ export class TasksController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update task (creator or admin/principal)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update task (admin only)' })
   update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @CurrentUser() user: any) {
     return this.svc.updateTask(id, dto, user);
   }
 
   @Patch(':id/cancel')
-  @ApiOperation({ summary: 'Cancel task (global — creator or admin)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Cancel task (admin only)' })
   cancel(@Param('id') id: string, @CurrentUser() user: any) {
     return this.svc.cancelTask(id, user);
   }
 
   @Patch(':id/cancel-all')
-  @ApiOperation({ summary: 'Cancel task for all assignees (alias for global cancel)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Cancel task for all assignees (admin only)' })
   cancelAll(@Param('id') id: string, @CurrentUser() user: any) {
     return this.svc.cancelTask(id, user);
   }
 
   @Patch('assignments/:id/cancel')
-  @ApiOperation({ summary: 'Cancel single assignment (staff)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Cancel single assignment (admin only)' })
   cancelSingle(@Param('id') id: string, @CurrentUser() user: any) {
     return this.svc.cancelAssignment(id, user);
   }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
 import {
@@ -30,7 +30,7 @@ function StatusBadge({ status }) {
 
 export default function LeaveListPage() {
   const navigate = useNavigate();
-  const { canApproveLeave, user } = useAuth();
+  const { canApproveLeave, user, role } = useAuth();
   const canApprove = canApproveLeave;
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +38,8 @@ export default function LeaveListPage() {
   const [actionId, setActionId] = useState(null);
   const [rejectModal, setRejectModal] = useState(null); // leave id being rejected
   const [rejectReason, setRejectReason] = useState('');
+  const [approveModal, setApproveModal] = useState(null); // leave id being approved
+  const [approveRemarks, setApproveRemarks] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -54,9 +56,15 @@ export default function LeaveListPage() {
 
   useEffect(() => { load(); }, [canApprove]);
 
-  const handleApprove = async (id) => {
-    setActionId(id);
-    await approveLeave(id, user?.uid);
+  const handleApprove = (id) => {
+    setApproveRemarks('');
+    setApproveModal(id);
+  };
+
+  const confirmApprove = async () => {
+    setActionId(approveModal);
+    setApproveModal(null);
+    await approveLeave(approveModal, user?.uid, approveRemarks.trim());
     await load();
     setActionId(null);
   };
@@ -170,13 +178,15 @@ export default function LeaveListPage() {
                         {leave.reason}
                       </div>
                     )}
-                    {leave.status === 'rejected' && leave.remarks && (
-                      <div className="text-xs text-red-500 mt-1">Rejected: {leave.remarks}</div>
+                    {leave.remarks && (
+                      <div className={`text-xs mt-1 ${leave.status === 'approved' ? 'text-green-700' : leave.status === 'rejected' ? 'text-red-500' : 'text-gray-500'}`}>
+                        Remark: {leave.remarks}
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={leave.status} />
-                    {canApprove && leave.status === 'pending' && (
+                    {canApprove && role !== 'coordinator' && leave.status === 'pending' && (
                       <>
                         <button
                           disabled={actionId === leave.id}
@@ -194,13 +204,18 @@ export default function LeaveListPage() {
                         </button>
                       </>
                     )}
-                    {leave.status === 'approved' && canApprove && (
+                    {leave.status === 'approved' && canApprove && !leave.proxyAssigned && (
                       <button
                         onClick={() => navigate(`/leave/${leave.id}/proxy`)}
                         className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded"
                       >
                         Assign Proxy
                       </button>
+                    )}
+                    {leave.proxyAssigned && (
+                      <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
+                        <UserCheck size={12} /> Proxy Assigned
+                      </span>
                     )}
                   </div>
                 </div>
@@ -236,6 +251,38 @@ export default function LeaveListPage() {
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium"
               >
                 Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {approveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center gap-3 mb-3">
+              <CheckCircle2 size={20} className="text-green-600 shrink-0" />
+              <h3 className="font-semibold text-gray-900">Approve Leave Application</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">Add a remark (optional).</p>
+            <textarea
+              value={approveRemarks}
+              onChange={(e) => setApproveRemarks(e.target.value)}
+              rows={3}
+              placeholder="e.g. Approved. Please ensure proxy coverage."
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"
+            />
+            <div className="flex gap-2 justify-end mt-4">
+              <button
+                onClick={() => setApproveModal(null)}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmApprove}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium"
+              >
+                Confirm Approve
               </button>
             </div>
           </div>

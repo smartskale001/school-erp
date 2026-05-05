@@ -39,3 +39,9 @@ export async function saveTimetableSettings(settings) {
     body: JSON.stringify(settings),
   });
 }
+
+export async function deleteTimetableFromDb(classId) {
+  return apiRequest(API_ENDPOINTS.timetable.delete(classId), {
+    method: 'DELETE',
+  });
+}

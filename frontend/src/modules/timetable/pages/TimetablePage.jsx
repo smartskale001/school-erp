@@ -37,9 +37,11 @@ import { getPeriodsFromSlots, getWorkingDays } from "@/modules/timetable/periodU
 import {
   saveTimetableToDb,
   loadTimetableFromDb,
+  deleteTimetableFromDb,
 } from "@/modules/timetable/services/timetableService";
 import { useClasses } from "@/core/context/ClassesContext";
 import { useAuth } from "@/core/context/AuthContext";
+import { apiRequest } from "@/core/api/client";
 import { useSubjects } from "@/core/hooks/useSubjects";
 import { useTeachers } from "@/core/hooks/useTeachers";
 
@@ -86,9 +88,11 @@ export default function TimetablePage() {
   const [assignSubject, setAssignSubject] = useState("");
   const [assignTeacher, setAssignTeacher] = useState("");
   const [isDirty, setIsDirty] = useState(false);
+  const [draftExists, setDraftExists] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(null);
   const [noticeDialog, setNoticeDialog] = useState({ open: false, title: "", message: "", tone: "info" });
   const [publishDialog, setPublishDialog] = useState({ open: false, effectiveFrom: "", effectiveTo: "", error: "" });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
   const [dbLoading, setDbLoading] = useState(true);
   const isFirstLoad = useRef(true);
@@ -163,6 +167,33 @@ export default function TimetablePage() {
     if (!hasLoadedPrefs) return;
     sessionStorage.setItem("erp_timetable_prefs", JSON.stringify({ selectedClass, view }));
   }, [selectedClass, view, hasLoadedPrefs]);
+
+  useEffect(() => {
+    if (!selectedClass || isTeacher) return;
+    async function loadDraftOrPub() {
+      try {
+        const res = await apiRequest(`/timetable/${selectedClass}`);
+        if (res) {
+          if (res.status === "draft") {
+            setDraftExists(true);
+          } else {
+            setDraftExists(false);
+          }
+          if (res.grids) {
+            setGridsByClass((prev) => ({
+              ...prev,
+              [selectedClass]: res.grids[selectedClass] || res.grids,
+            }));
+          }
+        } else {
+          setDraftExists(false);
+        }
+      } catch {
+        setDraftExists(false);
+      }
+    }
+    loadDraftOrPub();
+  }, [selectedClass, isTeacher]);
 
   // Intercept in-app navigation when dirty
   useEffect(() => {
@@ -364,6 +395,23 @@ export default function TimetablePage() {
     );
   };
 
+  const handleDelete = async () => {
+    if (!selectedClass) return;
+    try {
+      await deleteTimetableFromDb(selectedClass);
+      // Clear current class grid
+      setGridsByClass((prev) => {
+        const next = { ...prev };
+        delete next[selectedClass];
+        return next;
+      });
+      setDeleteConfirmOpen(false);
+      showNotice("Timetable Deleted", "The timetable for this class has been deleted from the database.", "success");
+    } catch (err) {
+      showNotice("Error", "Failed to delete timetable.", "warning");
+    }
+  };
+
   const validateBeforePublish = useCallback(() => {
     const classKeys = new Set(Object.keys(gridsByClass));
     if (selectedClass) classKeys.add(selectedClass);
@@ -412,6 +460,24 @@ export default function TimetablePage() {
     }
   }, [gridsByClass, publishDialog, showNotice]);
 
+  const handleSaveDraft = useCallback(async () => {
+    if (!selectedClass) return;
+    try {
+      await apiRequest("/timetable/draft", {
+        method: "POST",
+        body: JSON.stringify({
+          classId: selectedClass,
+          grids: gridsByClass,
+        }),
+      });
+      setIsDirty(false);
+      setDraftExists(true);
+      showNotice("Draft Saved", "Your timetable draft has been saved successfully.", "success");
+    } catch {
+      showNotice("Error", "Failed to save draft.", "warning");
+    }
+  }, [selectedClass, gridsByClass, showNotice]);
+
   const isClassSelected = !!selectedClass;
   const isTeacherSelected = !!selectedTeacher;
 
@@ -429,11 +495,16 @@ export default function TimetablePage() {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      {/* Unsaved changes banner */}
       {isDirty && !isTeacher && (
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 rounded-t-xl">
           <AlertCircle size={15} className="shrink-0" />
-          <span>You have unpublished changes. Click <strong>Publish Timetable</strong> to save them to the database.</span>
+          <span>You have unsaved changes in the current view.</span>
+        </div>
+      )}
+      {draftExists && !isTeacher && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 rounded-t-xl mt-1">
+          <AlertCircle size={15} className="shrink-0" />
+          <span>You have unpublished changes for this class in draft. Click <strong>Publish Timetable</strong> to make them live.</span>
         </div>
       )}
 
@@ -484,7 +555,7 @@ export default function TimetablePage() {
           </div>
         )}
 
-        {!isTeacher && (
+        {!isTeacher && user?.role !== 'principal' && (
           <div className="ml-auto flex items-center gap-2">
             <button
               className="border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -492,6 +563,21 @@ export default function TimetablePage() {
               disabled={view !== "class" || !isClassSelected || dbLoading}
             >
               Auto Assign
+            </button>
+            <button
+              className="border border-red-200 bg-red-50 text-red-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={view !== "class" || !isClassSelected || dbLoading || !filledCount}
+            >
+              Delete Timetable
+            </button>
+            <button
+              className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleSaveDraft}
+              disabled={view !== "class" || !isClassSelected || dbLoading}
+            >
+              <Save size={14} />
+              Save Draft
             </button>
             <button
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${isDirty ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
@@ -833,6 +919,33 @@ export default function TimetablePage() {
               onClick={handlePublish}
             >
               Publish
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="bg-white border border-gray-200 shadow-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Timetable</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete the timetable for <strong>{selectedClass}</strong>? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 mr-2"
+              onClick={() => setDeleteConfirmOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Confirm Delete
             </button>
           </DialogFooter>
         </DialogContent>

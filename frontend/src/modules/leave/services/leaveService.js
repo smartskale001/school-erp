@@ -16,11 +16,11 @@ export async function getLeaveApplicationsForTeacher() {
   return apiRequest(API_ENDPOINTS.leave.my);
 }
 
-export async function approveLeave(leaveId, userId) {
+export async function approveLeave(leaveId, userId, remarks) {
   // userId is passed for backend context if needed, but backend should use JWT
   return apiRequest(API_ENDPOINTS.leave.approve(leaveId), {
     method: 'PATCH',
-    body: JSON.stringify({ approvedBy: userId }), // Backend will likely use user from JWT
+    body: JSON.stringify({ approvedBy: userId, remarks }), // Backend will likely use user from JWT
   });
 }
 
@@ -31,7 +31,7 @@ export async function rejectLeave(leaveId, userId, remarks) {
   });
 }
 
-export async function createProxyAssignment(proxyData) {
+export async function assignProxyBatch(proxyData) {
   return apiRequest(API_ENDPOINTS.leave.proxy.create, {
     method: 'POST',
     body: JSON.stringify(proxyData),

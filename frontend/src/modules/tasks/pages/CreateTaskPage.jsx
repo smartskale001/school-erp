@@ -41,7 +41,7 @@ export default function CreateTaskPage() {
     getTeachers().then(setTeachers).catch(() => {});
   }, []);
 
-  if (!canManageAllTasks) {
+  if (!canManageAllTasks || ['principal', 'coordinator'].includes(role)) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
         You don't have permission to create tasks.

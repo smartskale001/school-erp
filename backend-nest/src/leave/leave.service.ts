@@ -5,7 +5,7 @@ import { LeaveApplicationEntity, LeaveStatus } from '../database/entities/leave-
 import { ProxyAssignmentEntity, ProxyStatus } from '../database/entities/proxy-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
-import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto } from './dto/leave.dto';
+import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto, AssignProxyBatchDto } from './dto/leave.dto';
 import { Role } from '../common/enums/role.enum';
 import { EmailService } from '../tasks/email.service';
 
@@ -114,7 +114,7 @@ export class LeaveService {
     return saved;
   }
 
-  async approve(id: string, user: CurrentUser) {
+  async approve(id: string, dto: ReviewLeaveDto, user: CurrentUser) {
     const leave = await this.leaveRepo.findOne({ where: { id } });
     if (!leave) throw new NotFoundException('Leave application not found');
 
@@ -122,7 +122,7 @@ export class LeaveService {
       status: LeaveStatus.APPROVED,
       approvedBy: user.id,
       approvedAt: new Date(),
-      remarks: null,
+      remarks: dto?.remarks || null,
     });
 
     const updated = await this.findOne(id);
@@ -166,23 +166,46 @@ export class LeaveService {
     return this.proxyRepo.find({ order: { createdAt: 'DESC' } });
   }
 
-  async createProxy(dto: CreateProxyDto, user: CurrentUser) {
-    if (dto.originalTeacherId === dto.proxyTeacherId) {
-      throw new BadRequestException('Proxy teacher must be different from the original teacher');
+  async assignProxyBatch(dto: AssignProxyBatchDto, user: CurrentUser) {
+    if (!dto.assignments || dto.assignments.length === 0) {
+      throw new BadRequestException('No proxy assignments provided');
     }
 
-    const entity = this.proxyRepo.create({
-      leaveApplicationId: dto.leaveApplicationId || null,
-      originalTeacherId: dto.originalTeacherId,
-      proxyTeacherId: dto.proxyTeacherId,
-      classId: dto.classId,
-      subjectId: dto.subjectId,
-      date: dto.date,
-      periodId: dto.periodId || null,
-      status: ProxyStatus.PENDING,
-      approvedBy: user.id,
+    const leave = await this.leaveRepo.findOne({ where: { id: dto.leaveId } });
+    if (!leave) {
+      throw new NotFoundException('Leave application not found');
+    }
+
+    if (leave.status !== LeaveStatus.APPROVED) {
+      throw new BadRequestException('Cannot assign proxy before approval');
+    }
+
+    // Delete existing proxies for this leave (idempotency)
+    await this.proxyRepo.delete({ leaveApplicationId: dto.leaveId });
+
+    const entries = dto.assignments.map((a) =>
+      this.proxyRepo.create({
+        leaveApplicationId: dto.leaveId,
+        originalTeacherId: a.originalTeacherId,
+        proxyTeacherId: a.proxyTeacherId,
+        classId: a.classId,
+        subjectId: a.subjectId,
+        date: a.date,
+        periodId: String(a.period),
+        status: ProxyStatus.APPROVED, // Assuming batch assign implies approval
+        approvedBy: user.id,
+        approvedAt: new Date(),
+      }),
+    );
+
+    await this.proxyRepo.save(entries);
+
+    // Mark leave as proxy assigned
+    await this.leaveRepo.update(dto.leaveId, {
+      proxyAssigned: true,
     });
-    return this.proxyRepo.save(entity);
+
+    return { message: 'Proxy assigned successfully', count: entries.length };
   }
 
   async approveProxy(id: string, user: CurrentUser) {

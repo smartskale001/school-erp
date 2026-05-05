@@ -83,6 +83,7 @@ export const API_ENDPOINTS = {
     publish: '/timetable/publish',
     publishById: (id) => `/timetable/${id}/publish`,
     settings: '/timetable/settings',
+    delete: (classId) => `/timetable/${classId}`,
   },
   attendance: {
     list: '/attendance',

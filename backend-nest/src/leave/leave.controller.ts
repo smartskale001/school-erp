@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { LeaveService } from './leave.service';
-import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto } from './dto/leave.dto';
+import { SubmitLeaveDto, ReviewLeaveDto, CreateProxyDto, AssignProxyBatchDto } from './dto/leave.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -26,10 +26,10 @@ export class LeaveController {
   listProxies() { return this.svc.findAllProxies(); }
 
   @Post('proxy')
-  @UseGuards(RolesGuard) @MinRole(Role.COORDINATOR)
-  @ApiOperation({ summary: 'Create proxy assignment (coordinator+)' })
-  createProxy(@Body() dto: CreateProxyDto, @CurrentUser() user: any) {
-    return this.svc.createProxy(dto, user);
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.COORDINATOR, Role.PRINCIPAL)
+  @ApiOperation({ summary: 'Assign proxy teachers in batch' })
+  assignProxy(@Body() dto: AssignProxyBatchDto, @CurrentUser() user: any) {
+    return this.svc.assignProxyBatch(dto, user);
   }
 
   @Patch('proxy/:id/approve')
@@ -73,15 +73,19 @@ export class LeaveController {
   }
 
   @Patch(':id/approve')
-  @UseGuards(RolesGuard) @MinRole(Role.COORDINATOR)
-  @ApiOperation({ summary: 'Approve leave (coordinator+)' })
-  approve(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.svc.approve(id, user);
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.PRINCIPAL)
+  @ApiOperation({ summary: 'Approve leave (admin/principal only)' })
+  approve(
+    @Param('id') id: string,
+    @Body() dto: ReviewLeaveDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.svc.approve(id, dto, user);
   }
 
   @Patch(':id/reject')
-  @UseGuards(RolesGuard) @MinRole(Role.COORDINATOR)
-  @ApiOperation({ summary: 'Reject leave (coordinator+)' })
+  @UseGuards(RolesGuard) @Roles(Role.ADMIN, Role.PRINCIPAL)
+  @ApiOperation({ summary: 'Reject leave (admin/principal only)' })
   reject(
     @Param('id') id: string,
     @Body() dto: ReviewLeaveDto,

@@ -16,6 +16,7 @@ import { TimetableSettingsEntity } from './entities/timetable-settings.entity';
 import { AttendanceEntity } from './entities/attendance.entity';
 import { FeeEntity } from './entities/fee.entity';
 import { ReportEntity } from './entities/report.entity';
+import { NotificationEntity } from './entities/notification.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -33,6 +34,7 @@ const ALL_ENTITIES = [
   AttendanceEntity,
   FeeEntity,
   ReportEntity,
+  NotificationEntity,
 ];
 
 @Module({

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, UserCheck, AlertCircle } from 'lucide-react';
 import {
-  getLeaveApplications, createProxyAssignment, getProxyAssignments
+  getLeaveApplications, assignProxyBatch, getProxyAssignments
 } from '@/modules/leave/services/leaveService'; // Updated import
 import { loadTimetableFromDb } from '@/modules/timetable/services/timetableService'; // Updated import
 import { useAuth } from '@/core/context/AuthContext';
@@ -109,25 +109,33 @@ export default function ProxyAssignmentPage() {
   };
 
   const handleAssign = async () => {
+    const selectedAssignments = affected
+      .filter((ap) => selections[`${ap.date}-${ap.periodIndex}-${ap.dayIndex}`])
+      .map((ap) => ({
+        date: ap.date,
+        period: ap.periodIndex,
+        proxyTeacherId: selections[`${ap.date}-${ap.periodIndex}-${ap.dayIndex}`],
+        classId: ap.classKey,
+        subjectId: ap.subject,
+        originalTeacherId: ap.originalTeacherId,
+      }));
+
+    if (selectedAssignments.length === 0) {
+      alert('Please select at least one proxy teacher.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await Promise.all(
-        affected
-          .filter((ap) => selections[`${ap.date}-${ap.periodIndex}-${ap.dayIndex}`])
-          .map((ap) =>
-            createProxyAssignment({
-              leaveApplicationId: leaveId,
-              originalTeacherId: ap.originalTeacherId,
-              proxyTeacherId: selections[`${ap.date}-${ap.periodIndex}-${ap.dayIndex}`],
-              date: ap.date,
-              classId: ap.classKey,
-              subjectId: ap.subject,
-              periodId: String(ap.periodIndex),
-            })
-          )
-      );
+      await assignProxyBatch({
+        leaveId,
+        assignments: selectedAssignments,
+      });
       navigate('/leave');
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'Failed to assign proxy teachers.');
+    }
     setSaving(false);
   };
 

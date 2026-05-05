@@ -163,7 +163,7 @@ export default function TasksListPage() {
             {canManageAllTasks ? 'Assign and monitor teacher tasks' : 'View and update your assigned tasks'}
           </p>
         </div>
-        {canManageAllTasks && (
+        {canManageAllTasks && !['principal', 'coordinator'].includes(role) && (
           <button
             onClick={() => navigate('/tasks/create')}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -302,7 +302,7 @@ export default function TasksListPage() {
                         ))}
                       </select>
                     )}
-                    {canManageAllTasks && a.status !== 'cancelled' && a.status !== 'completed' && (
+                    {canManageAllTasks && !['principal', 'coordinator'].includes(role) && a.status !== 'cancelled' && a.status !== 'completed' && (
                       <button
                         onClick={() => handleCancelClick(a)}
                         className="text-xs text-red-500 hover:text-red-700 px-2 py-1 border border-red-200 rounded hover:bg-red-50"

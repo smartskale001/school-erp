@@ -115,7 +115,7 @@ export default function TaskDetailPage() {
             <span className={`px-2.5 py-0.5 rounded text-xs font-medium ${PRIORITY_CLS[task.priority] || 'bg-gray-100 text-gray-600'}`}>
               {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)} Priority
             </span>
-            {canManageAllTasks && task.status !== 'cancelled' && (
+            {canManageAllTasks && !['principal', 'coordinator'].includes(role) && task.status !== 'cancelled' && (
               <button
                 onClick={handleCancel}
                 className="text-xs text-red-500 hover:text-red-700 px-3 py-1 border border-red-200 rounded hover:bg-red-50"
@@ -217,7 +217,7 @@ export default function TaskDetailPage() {
                       ))}
                     </select>
                   )}
-                  {canManageAllTasks && a.status !== 'cancelled' && a.status !== 'completed' && (
+                  {canManageAllTasks && !['principal', 'coordinator'].includes(role) && a.status !== 'cancelled' && a.status !== 'completed' && (
                     <button
                       onClick={() => handleCancelAssignment(a.id)}
                       className="text-[10px] text-red-500 hover:text-red-700 px-1.5 py-0.5 border border-red-100 rounded hover:bg-red-50"

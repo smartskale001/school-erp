@@ -7,6 +7,8 @@ import { CreateTaskDto, UpdateTaskDto, UpdateAssignmentStatusDto } from './dto/t
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { EmailService } from './email.service';
 import { Role } from '../common/enums/role.enum';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UserEntity } from '../database/entities/user.entity';
 
 interface CurrentUser {
   id: string;
@@ -23,7 +25,10 @@ export class TasksService {
     private assignmentRepo: Repository<TaskAssignmentEntity>,
     @InjectRepository(TeacherEntity)
     private teacherRepo: Repository<TeacherEntity>,
+    @InjectRepository(UserEntity)
+    private userRepo: Repository<UserEntity>,
     private emailService: EmailService,
+    private notificationsService: NotificationsService,
   ) { }
 
   // ─── Tasks ────────────────────────────────────────────────────────────────
@@ -79,15 +84,32 @@ export class TasksService {
       );
       await this.assignmentRepo.save(assignments);
 
-      // Trigger Email Notifications
+      // Trigger Email & In-App Notifications
       const teachers = await this.teacherRepo.findByIds(dto.assignedTo);
+      const users = await this.userRepo.find({
+        where: dto.assignedTo.map(tid => ({ teacherId: tid }))
+      });
+      const userMap = Object.fromEntries(users.map(u => [u.teacherId, u.id]));
+
       teachers.forEach(teacher => {
+        // Email
         this.emailService.sendTaskAssignmentNotification(
           teacher.email,
           teacher.name,
           saved.title,
           saved.dueDate
         );
+
+        // In-App
+        const userId = userMap[teacher.id];
+        if (userId) {
+          this.notificationsService.create(
+            userId,
+            'New Task Assigned',
+            `You have been assigned: ${saved.title}`,
+            'task'
+          );
+        }
       });
     }
 

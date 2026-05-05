@@ -105,12 +105,19 @@ export class TimetableService {
   async saveAndPublish(dto: SaveTimetableDto, user: CurrentUser) {
     const schoolId = dto.schoolId || 'school_001';
     await this.repo.update({ schoolId }, { isActive: false });
+    if (dto.grids) {
+      for (const classId of Object.keys(dto.grids)) {
+        await this.repo.delete({ classId, status: 'draft' });
+        await this.repo.delete({ classId, status: 'published' });
+      }
+    }
     const entity = this.repo.create({
       grids: dto.grids,
       schoolId,
       isActive: true,
       publishedAt: new Date(),
       publishedBy: user.id,
+      status: 'published',
       ...normalizeEffectiveDates(dto),
     });
     const saved = await this.repo.save(entity);
@@ -122,5 +129,75 @@ export class TimetableService {
     });
 
     return saved;
+  }
+
+  async saveDraft(dto: any, user: CurrentUser) {
+    const schoolId = dto.schoolId || 'school_001';
+    // Clear old draft ONLY
+    await this.repo.delete({ classId: dto.classId, status: 'draft' });
+
+    const entity = this.repo.create({
+      classId: dto.classId,
+      grids: dto.grids,
+      schoolId,
+      isActive: false,
+      status: 'draft',
+    });
+    return this.repo.save(entity);
+  }
+
+  async publishDraft(dto: any, user: CurrentUser) {
+    const schoolId = dto.schoolId || 'school_001';
+    // Remove old published for this class
+    await this.repo.delete({ classId: dto.classId, status: 'published' });
+
+    // Convert draft → published
+    const draft = await this.repo.findOne({ where: { classId: dto.classId, status: 'draft' } });
+    if (draft) {
+      await this.repo.update({ id: draft.id }, {
+        status: 'published',
+        isActive: true,
+        publishedAt: new Date(),
+        publishedBy: user.id,
+      });
+    } else {
+      const entity = this.repo.create({
+        classId: dto.classId,
+        grids: dto.grids,
+        status: 'published',
+        schoolId,
+        isActive: true,
+        publishedAt: new Date(),
+        publishedBy: user.id,
+      });
+      await this.repo.save(entity);
+    }
+    return { message: 'Published successfully' };
+  }
+
+  async getByClass(classId: string) {
+    // try draft first
+    const draft = await this.repo.findOne({ where: { classId, status: 'draft' } });
+    if (draft) return draft;
+
+    // fallback to published
+    const pub = await this.repo.findOne({ where: { classId, status: 'published' } });
+    return pub || null;
+  }
+
+  async getTeacherTimetable(user: any) {
+    return this.repo.find({ where: { status: 'published' } });
+  }
+
+  async deleteByClass(classId: string, schoolId = 'school_001') {
+    await this.repo.delete({ classId });
+    const all = await this.repo.find({ where: { schoolId } });
+    for (const tt of all) {
+      if (tt.grids && tt.grids[classId]) {
+        delete tt.grids[classId];
+        await this.repo.save(tt);
+      }
+    }
+    return { message: 'Timetable deleted successfully' };
   }
 }

@@ -50,6 +50,9 @@ export class LeaveApplicationEntity {
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 
+  @Column({ name: 'proxy_assigned', default: false })
+  proxyAssigned: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
