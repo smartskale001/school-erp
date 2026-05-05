@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
 import {
   getLeaveApplications, getLeaveApplicationsForTeacher, approveLeave, rejectLeave,
-} from '@/modules/leave/services/leaveService'; // Updated import
+} from '@/modules/leave/services/leaveService';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', cls: 'bg-yellow-100 text-yellow-700' },
@@ -36,7 +36,7 @@ export default function LeaveListPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [actionId, setActionId] = useState(null);
-  const [rejectModal, setRejectModal] = useState(null); // leave id being rejected
+  const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [approveModal, setApproveModal] = useState(null); // leave id being approved
   const [approveRemarks, setApproveRemarks] = useState('');
@@ -47,7 +47,6 @@ export default function LeaveListPage() {
       if (canApprove) {
         setLeaves(await getLeaveApplications());
       } else {
-        // Fetch personal leaves for teachers
         setLeaves(await getLeaveApplicationsForTeacher());
       }
     } catch (e) { console.error(e); }
@@ -213,9 +212,12 @@ export default function LeaveListPage() {
                       </button>
                     )}
                     {leave.proxyAssigned && (
-                      <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
+                      <button
+                        onClick={() => navigate(`/leave/${leave.id}/proxy`)}
+                        className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded"
+                      >
                         <UserCheck size={12} /> Proxy Assigned
-                      </span>
+                      </button>
                     )}
                   </div>
                 </div>

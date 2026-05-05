@@ -26,12 +26,19 @@ export default function LeaveApplicationPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const isWeekend = (dateStr) => {
+    const day = new Date(dateStr).getDay();
+    return day === 0 || day === 6;
+  };
+
   const validate = () => {
     const e = {};
     if (!startDate) e.startDate = 'Start date is required';
     if (!endDate) e.endDate = 'End date is required';
-    if (startDate && endDate && endDate < startDate) e.endDate = 'End date must be on or after start date';
     if (startDate && startDate < today) e.startDate = 'Start date cannot be in the past';
+    if (startDate && isWeekend(startDate)) e.startDate = 'Leave cannot start on a weekend';
+    if (endDate && isWeekend(endDate)) e.endDate = 'Leave cannot end on a weekend';
+    if (startDate && endDate && endDate < startDate) e.endDate = 'End date must be on or after start date';
     return e;
   };
 
