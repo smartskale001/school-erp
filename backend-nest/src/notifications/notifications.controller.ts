@@ -13,8 +13,19 @@ export class NotificationsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all notifications for current user' })
-  findAll(@CurrentUser() user: any) {
-    return this.svc.findAllForUser(user.id);
+  async findAll(@CurrentUser() user: any) {
+    console.log('[DEBUG Notifications] Logged in user:', user);
+    // Temporary test to see if the table can be read at all
+    const notifications = await this.svc.findAllForUser(user.id);
+    console.log(`[DEBUG Notifications] Returning ${notifications.length} notifications for user ${user.id}`);
+    
+    // Fallback: If 0, try fetching all to see if ANY exist in the repo
+    if (notifications.length === 0) {
+      const all = await this.svc['repo'].find();
+      console.log(`[DEBUG Notifications] Total in DB: ${all.length}`);
+    }
+    
+    return notifications;
   }
 
   @Patch(':id/read')

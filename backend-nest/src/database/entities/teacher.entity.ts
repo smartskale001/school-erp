@@ -4,10 +4,20 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { SubjectEntity } from './subject.entity';
 
 @Entity('teachers')
 export class TeacherEntity {
+  @ManyToOne(() => SubjectEntity, (subject) => subject.teachers, { eager: true, nullable: true })
+  @JoinColumn({ name: 'subject_id' })
+  subject: SubjectEntity;
+
+  @Column({ name: 'subject_id', nullable: true })
+  subjectId: string;
+
   @PrimaryColumn({ length: 20 })
   id: string;
 

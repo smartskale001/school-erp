@@ -25,8 +25,15 @@ export async function apiRequest(path, options = {}) {
       token = await authService.refreshTokens();
       response = await makeRequest(token);
     } catch {
-      await authService.logout();
-      window.location.href = '/login';
+      // Only redirect + logout when we actually had a session AND are not already
+      // on an auth page — prevents the infinite hard-reload loop where
+      // AcademicYearContext fires on /login, gets 401, redirects to /login, repeat.
+      const onAuthPage = window.location.pathname === '/login' ||
+                         window.location.pathname === '/signup';
+      if (!onAuthPage) {
+        await authService.logout();
+        window.location.href = '/login';
+      }
       throw new Error('Session expired. Please log in again.');
     }
   }

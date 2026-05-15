@@ -14,9 +14,15 @@ import {
   ChevronRight,
   LogOut,
   UserCircle,
+  Settings,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
+import { useAcademicYear } from "@/core/context/AcademicYearContext";
 import NotificationBell from "@/core/components/NotificationBell";
+import { requestNotificationPermission } from "@/utils/firebaseNotifications";
+import logo from "@/assets/logo.png";
+
 
 // roles: allowlist — omit to show to everyone
 const navSections = [
@@ -47,6 +53,7 @@ const navSections = [
     items: [
       { label: "Tasks", icon: ClipboardList, path: "/tasks" },
       { label: "Leave", icon: CalendarOff,   path: "/leave" },
+      { label: "Feedback", icon: MessageSquare, path: "/feedback", roles: ["principal", "teacher"] },
     ],
   },
   {
@@ -55,20 +62,35 @@ const navSections = [
       { label: "Reports", icon: BarChart3, path: "/reports", roles: ["admin", "principal", "coordinator"] },
     ],
   },
+  {
+    label: "SETTINGS",
+    items: [
+      { label: "Academic Years", icon: Settings, path: "/academic-years", roles: ["admin", "principal"] },
+    ],
+  },
 ];
 
 export default function AppLayout({ children }) {
   const { userProfile, isTeacher, role, logout } = useAuth();
+  const { activeYear, loading: yearLoading } = useAcademicYear();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    // Check and request permission for returning users
+    if (userProfile) {
+      requestNotificationPermission().catch(console.error);
+    }
+  }, [userProfile]);
+
   const displayName = userProfile?.name || userProfile?.email || "User";
-  const initials = displayName
+  const initials = (displayName || "User")
     .split(" ")
+    .filter(Boolean)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "U";
 
   const handleLogout = async () => {
     await logout();
@@ -85,12 +107,12 @@ export default function AppLayout({ children }) {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <GraduationCap size={16} className="text-white" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+              <img src={logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <div className="font-bold text-gray-900 text-sm leading-tight">School ERP</div>
-              <div className="text-xs text-gray-400">Management System</div>
+              <div className="font-bold text-gray-900 text-[10px] leading-tight opacity-60">Welcome to</div>
+              <div className="font-extrabold text-gray-900 text-sm leading-tight">Javiya Schooling System</div>
             </div>
           </div>
         </div>
@@ -184,7 +206,16 @@ export default function AppLayout({ children }) {
 
       {/* Top bar */}
       <header className="fixed left-[240px] top-0 right-0 h-[56px] bg-white border-b border-gray-100 flex items-center px-6 z-20">
-        <div className="flex-1" />
+        <div className="flex-1 flex items-center gap-4">
+          {activeYear ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-700 text-xs font-semibold">
+              <CalendarDays size={14} />
+              Session: {activeYear.name}
+            </div>
+          ) : !yearLoading ? (
+            <div className="text-xs text-red-500 font-medium">No active academic year</div>
+          ) : null}
+        </div>
         <NotificationBell />
       </header>
 

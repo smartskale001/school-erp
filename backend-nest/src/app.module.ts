@@ -15,6 +15,10 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { FeesModule } from './fees/fees.module';
 import { ReportsModule } from './reports/reports.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AcademicYearsModule } from './academic-years/academic-years.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { FirebaseModule } from './firebase/firebase.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -34,6 +38,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     FeesModule,
     ReportsModule,
     NotificationsModule,
+    AcademicYearsModule,
+    FeedbackModule,
+    FirebaseModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

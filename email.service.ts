@@ -26,7 +26,7 @@ export class EmailService {
         <p>Hello ${teacherName},</p>
         <p>You have been assigned a new task: <strong>${taskTitle}</strong></p>
         <p><strong>Due Date:</strong> ${dateStr}</p>
-        <p>Please log in to the School ERP to view details and update your progress.</p>
+        <p>Please log in to the Javiya Schooling System to view details and update your progress.</p>
         <br />
         <p>Regards,<br />School Administration</p>
       </div>
@@ -38,7 +38,7 @@ export class EmailService {
   private async sendMail(to: string, subject: string, html: string) {
     try {
       await this.transporter.sendMail({
-        from: '"School ERP" <noreply@schoolerp.com>',
+        from: '"Javiya Schooling System" <noreply@javiyaschool.com>',
         to,
         subject,
         html,

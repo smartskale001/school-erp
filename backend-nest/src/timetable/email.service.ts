@@ -26,7 +26,7 @@ export class EmailService {
         <p>Hello ${teacherName},</p>
         <p>You have been assigned a new task: <strong>${taskTitle}</strong></p>
         <p><strong>Due Date:</strong> ${dateStr}</p>
-        <p>Please log in to the School ERP to view details and update your progress.</p>
+        <p>Please log in to the Javiya Schooling System to view details and update your progress.</p>
         <br />
         <p>Regards,<br />School Administration</p>
       </div>
@@ -40,19 +40,19 @@ export class EmailService {
       <div style="font-family: sans-serif; padding: 20px; color: #333; border: 1px solid #eee; border-radius: 8px;">
         <h2 style="color: #2563eb;">ERP Connectivity Test</h2>
         <p>Hello,</p>
-        <p>This is a test email sent from the <strong>School ERP</strong> system to verify that your SMTP settings are configured correctly.</p>
+        <p>This is a test email sent from the <strong>Javiya Schooling System</strong> to verify that your SMTP settings are configured correctly.</p>
         <p>If you are seeing this, the email integration is working!</p>
         <br />
         <p style="font-size: 12px; color: #777;">Timestamp: ${new Date().toLocaleString()}</p>
       </div>
     `;
-    return this.sendMail(to, 'School ERP - SMTP Configuration Test', html);
+    return this.sendMail(to, 'Javiya Schooling System - SMTP Configuration Test', html);
   }
 
   private async sendMail(to: string, subject: string, html: string) {
     try {
       const info = await this.transporter.sendMail({
-        from: '"School ERP" <noreply@schoolerp.com>',
+        from: '"Javiya Schooling System" <noreply@javiyaschool.com>',
         to,
         subject,
         html,

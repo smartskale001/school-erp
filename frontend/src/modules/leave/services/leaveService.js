@@ -16,6 +16,10 @@ export async function getLeaveApplicationsForTeacher() {
   return apiRequest(API_ENDPOINTS.leave.my);
 }
 
+export async function getLeaveStats() {
+  return apiRequest('/leave/stats');
+}
+
 export async function approveLeave(leaveId, userId, remarks) {
   // userId is passed for backend context if needed, but backend should use JWT
   return apiRequest(API_ENDPOINTS.leave.approve(leaveId), {

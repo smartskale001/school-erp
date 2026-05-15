@@ -33,6 +33,9 @@ export class UserEntity {
   @Column({ name: 'refresh_token_hash', nullable: true, type: 'text' })
   refreshTokenHash: string;
 
+  @Column({ name: 'fcm_token', nullable: true, type: 'text' })
+  fcmToken: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

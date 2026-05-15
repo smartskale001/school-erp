@@ -5,10 +5,11 @@ import { TaskEntity, TaskStatus } from '../database/entities/task.entity';
 import { TaskAssignmentEntity, TaskAssignmentStatus } from '../database/entities/task-assignment.entity';
 import { CreateTaskDto, UpdateTaskDto, UpdateAssignmentStatusDto } from './dto/tasks.dto';
 import { TeacherEntity } from '../database/entities/teacher.entity';
-import { EmailService } from './email.service';
+import { EmailService } from '../email/email.service';
 import { Role } from '../common/enums/role.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UserEntity } from '../database/entities/user.entity';
+import { AcademicYearsService } from '../academic-years/academic-years.service';
 
 interface CurrentUser {
   id: string;
@@ -29,6 +30,7 @@ export class TasksService {
     private userRepo: Repository<UserEntity>,
     private emailService: EmailService,
     private notificationsService: NotificationsService,
+    private academicYearService: AcademicYearsService,
   ) { }
 
   // ─── Tasks ────────────────────────────────────────────────────────────────
@@ -58,6 +60,8 @@ export class TasksService {
   }
 
   async createTask(dto: CreateTaskDto, user: CurrentUser) {
+    const activeYear = await this.academicYearService.getActiveAcademicYear();
+
     const task = this.taskRepo.create({
       title: dto.title,
       description: dto.description,
@@ -71,6 +75,7 @@ export class TasksService {
       status: TaskStatus.PENDING,
       fileUrl: dto.fileUrl || null,
       schoolId: 'school_001',
+      academicYearId: activeYear.id,
     });
     const saved = await this.taskRepo.save(task);
 
@@ -93,11 +98,12 @@ export class TasksService {
 
       teachers.forEach(teacher => {
         // Email
-        this.emailService.sendTaskAssignmentNotification(
+        this.emailService.sendTaskAssignedEmail(
           teacher.email,
           teacher.name,
           saved.title,
-          saved.dueDate
+          saved.dueDate ? new Date(saved.dueDate).toLocaleDateString() : 'No due date',
+          dto.createdByName || 'School Administration'
         );
 
         // In-App
@@ -123,7 +129,31 @@ export class TasksService {
       throw new ForbiddenException('Cannot update this task');
     }
     await this.taskRepo.update(id, dto as any);
-    return this.findOneTask(id);
+    const updated = await this.findOneTask(id);
+
+    // Notify assigned teachers about the update
+    try {
+      const assignments = await this.assignmentRepo.find({ where: { taskId: id } });
+      if (assignments.length) {
+        const teacherIds = assignments.map(a => a.teacherId);
+        const users = await this.userRepo.find({
+          where: teacherIds.map(tid => ({ teacherId: tid }))
+        });
+
+        for (const u of users) {
+          this.notificationsService.create(
+            u.id,
+            'Task Updated',
+            `The task "${updated.title}" has been updated by administration.`,
+            'task'
+          ).catch(() => {});
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send task update notifications:', error);
+    }
+
+    return updated;
   }
 
   async removeTask(id: string) {

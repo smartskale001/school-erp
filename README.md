@@ -1,6 +1,6 @@
-# School ERP
+# Javiya Schooling System
 
-A full-stack School ERP with role-based access control, timetable management, tasks, leave, attendance, fees, and reports.
+A full-stack Javiya Schooling System with role-based access control, timetable management, tasks, leave, attendance, fees, and reports.
 
 Live Demo: `https://school-erp-seven-bice.vercel.app/organization`
 

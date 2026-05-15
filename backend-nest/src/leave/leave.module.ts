@@ -6,11 +6,17 @@ import { LeaveApplicationEntity } from '../database/entities/leave-application.e
 import { ProxyAssignmentEntity } from '../database/entities/proxy-assignment.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
-import { EmailService } from '../tasks/email.service';
+import { TeacherLeaveBalanceEntity } from '../database/entities/teacher-leave-balance.entity';
+import { AcademicYearsModule } from '../academic-years/academic-years.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity, UserEntity])],
-  providers: [LeaveService, EmailService],
+  imports: [
+    TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity, UserEntity, TeacherLeaveBalanceEntity]),
+    NotificationsModule,
+    AcademicYearsModule
+  ],
+  providers: [LeaveService],
   controllers: [LeaveController],
   exports: [LeaveService],
 })

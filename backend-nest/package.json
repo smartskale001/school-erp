@@ -1,7 +1,7 @@
 {
   "name": "school-erp-backend",
   "version": "1.0.0",
-  "description": "School ERP Backend — NestJS + PostgreSQL",
+  "description": "Javiya Schooling System Backend — NestJS + PostgreSQL",
   "scripts": {
     "build": "nest build",
     "start": "node dist/main",
@@ -19,11 +19,13 @@
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/swagger": "^7.3.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@sendgrid/mail": "^8.1.6",
     "@types/nodemailer": "^8.0.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
+    "firebase-admin": "^13.9.0",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
     "passport": "^0.7.0",

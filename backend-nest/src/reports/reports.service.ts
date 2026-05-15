@@ -5,6 +5,7 @@ import { ReportEntity } from '../database/entities/report.entity';
 import { TaskAssignmentEntity, TaskAssignmentStatus } from '../database/entities/task-assignment.entity';
 import { ProxyAssignmentEntity } from '../database/entities/proxy-assignment.entity';
 import { CreateReportDto } from './dto/reports.dto';
+import { AcademicYearsService } from '../academic-years/academic-years.service';
 
 interface CurrentUser { id: string; }
 
@@ -17,6 +18,7 @@ export class ReportsService {
     private assignmentRepo: Repository<TaskAssignmentEntity>,
     @InjectRepository(ProxyAssignmentEntity)
     private proxyRepo: Repository<ProxyAssignmentEntity>,
+    private academicYearService: AcademicYearsService,
   ) {}
 
   getSubstitutionReport(date: string) {
@@ -66,10 +68,13 @@ export class ReportsService {
   }
 
   async create(dto: CreateReportDto, user: CurrentUser) {
+    const activeYear = await this.academicYearService.getActiveAcademicYear();
+
     const entity = this.repo.create({
       ...dto,
       createdBy: user.id,
       schoolId: dto.schoolId || 'school_001',
+      academicYearId: activeYear.id,
     });
     return this.repo.save(entity);
   }

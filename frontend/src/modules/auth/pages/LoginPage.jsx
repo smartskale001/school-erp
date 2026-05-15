@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { authService } from '@/core/services/authService';
 import { useAuth } from '@/core/context/AuthContext';
+import logo from '@/assets/logo.png';
+
+
+import { requestNotificationPermission } from '@/utils/firebaseNotifications';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +24,10 @@ export default function LoginPage() {
     try {
       const user = await authService.login(email.trim(), password);
       login(user);
+      
+      // Request FCM permission (non-blocking)
+      requestNotificationPermission().catch(console.error);
+      
       navigate('/', { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid email or password.');
@@ -31,8 +39,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-xl border border-gray-200 w-full max-w-sm shadow-sm">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">School ERP</h1>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <img src={logo} alt="Logo" className="w-16 h-16 object-contain mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Welcome to <br /> Javiya Schooling System</h1>
           <p className="text-sm text-gray-500 mt-1">
             Sign in to your account.{' '}
             <Link to="/signup" className="text-emerald-600 hover:underline font-medium">

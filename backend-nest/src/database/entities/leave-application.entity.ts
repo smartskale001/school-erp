@@ -17,6 +17,26 @@ export class LeaveApplicationEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'academic_year_id', nullable: true })
+  academicYearId: number;
+
+  @Column({
+    type: 'varchar',
+    name: 'leave_duration',
+    default: 'FULL_DAY',
+    length: 20
+  })
+  leaveDuration: string;
+
+  @Column({
+    type: 'decimal',
+    name: 'deducted_leaves',
+    precision: 4,
+    scale: 1,
+    default: 1
+  })
+  deductedLeaves: number;
+
   @Column({ name: 'teacher_id', length: 50, nullable: true })
   teacherId: string;
 

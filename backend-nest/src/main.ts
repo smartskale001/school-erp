@@ -45,8 +45,8 @@ async function bootstrap() {
   );
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('School ERP API')
-    .setDescription('NestJS + PostgreSQL backend for School ERP')
+    .setTitle('Javiya Schooling System API')
+    .setDescription('NestJS + PostgreSQL backend for Javiya Schooling System')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

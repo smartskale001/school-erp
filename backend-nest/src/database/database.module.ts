@@ -17,6 +17,9 @@ import { AttendanceEntity } from './entities/attendance.entity';
 import { FeeEntity } from './entities/fee.entity';
 import { ReportEntity } from './entities/report.entity';
 import { NotificationEntity } from './entities/notification.entity';
+import { AcademicYearEntity } from './entities/academic-year.entity';
+import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
+import { FeedbackEntity } from './entities/feedback.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -35,6 +38,9 @@ const ALL_ENTITIES = [
   FeeEntity,
   ReportEntity,
   NotificationEntity,
+  AcademicYearEntity,
+  TeacherLeaveBalanceEntity,
+  FeedbackEntity,
 ];
 
 @Module({

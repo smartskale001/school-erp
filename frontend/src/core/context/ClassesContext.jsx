@@ -9,7 +9,10 @@ const STORAGE_KEY = 'erp_classes';
 function loadClasses() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : defaultClassesData;
+    }
   } catch {}
   return defaultClassesData;
 }
@@ -94,9 +97,11 @@ export function ClassesProvider({ children }) {
   }, []);
 
   // Flat list of { value: "Class 1-A", label: "Class 1 - A" }
-  const classOptions = classes.flatMap((c) =>
-    c.sections.map((s) => ({ value: `${c.class}-${s}`, label: `${c.class} - ${s}` }))
-  );
+  const classOptions = Array.isArray(classes) 
+    ? classes.flatMap((c) =>
+        (c?.sections || []).map((s) => ({ value: `${c.class}-${s}`, label: `${c.class} - ${s}` }))
+      )
+    : [];
 
   return (
     <ClassesContext.Provider value={{ classes, classOptions, addClass, removeClass, addSection, removeSection }}>

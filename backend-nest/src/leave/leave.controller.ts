@@ -58,6 +58,12 @@ export class LeaveController {
     return this.svc.findAll(user);
   }
 
+  @Get('stats')
+  @ApiOperation({ summary: 'Get my leave balance stats' })
+  getStats(@CurrentUser() user: any) {
+    return this.svc.getMyLeaveStats(user);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get leave application by id' })
   findOne(@Param('id') id: string) { return this.svc.findOne(id); }

@@ -5,7 +5,10 @@ import { TimetableEntity } from '../database/entities/timetable.entity';
 import { TimetableSettingsEntity } from '../database/entities/timetable-settings.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { SaveTimetableDto, SaveTimetableSettingsDto } from './dto/timetable.dto';
-import { EmailService } from '../tasks/email.service';
+import { EmailService } from '../email/email.service';
+import { AcademicYearsService } from '../academic-years/academic-years.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UserEntity } from '../database/entities/user.entity';
 
 interface CurrentUser { id: string; }
 
@@ -25,7 +28,11 @@ export class TimetableService {
     private settingsRepo: Repository<TimetableSettingsEntity>,
     @InjectRepository(TeacherEntity)
     private teacherRepo: Repository<TeacherEntity>,
+    @InjectRepository(UserEntity)
+    private userRepo: Repository<UserEntity>,
     private emailService: EmailService,
+    private academicYearService: AcademicYearsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async getActive(schoolId = 'school_001') {
@@ -42,12 +49,15 @@ export class TimetableService {
 
   async save(dto: SaveTimetableDto, user: CurrentUser) {
     const schoolId = dto.schoolId || 'school_001';
+    const activeYear = await this.academicYearService.getActiveAcademicYear();
+
     // Upsert: deactivate existing active timetable and create a new draft
     await this.repo.update({ schoolId, isActive: true }, { isActive: false });
     const entity = this.repo.create({
       grids: dto.grids,
       schoolId,
       isActive: false,
+      academicYearId: activeYear.id,
       ...normalizeEffectiveDates(dto),
     });
     return this.repo.save(entity);
@@ -68,12 +78,29 @@ export class TimetableService {
     const updated = await this.repo.findOne({ where: { id } });
 
     // Notify all teachers about the newly published timetable
-    const teachers = await this.teacherRepo.find({ where: { schoolId: tt.schoolId } });
-    teachers.forEach(teacher => {
-      this.emailService.sendTimetablePublishedNotification(teacher.email, teacher.name);
-    });
+    await this.notifyTeachers(tt.schoolId, tt.name);
 
     return updated;
+  }
+
+  private async notifyTeachers(schoolId: string, ttName: string) {
+    const teachers = await this.teacherRepo.find({ where: { schoolId } });
+    
+    for (const teacher of teachers) {
+      // Email
+      this.emailService.sendTimetablePublishedEmail(teacher.email, teacher.name).catch(() => {});
+      
+      // In-App/Push
+      const user = await this.userRepo.findOne({ where: { email: teacher.email } });
+      if (user) {
+        this.notificationsService.create(
+          user.id,
+          'Timetable Published',
+          `The academic timetable "${ttName}" has been officially published.`,
+          'timetable'
+        ).catch(() => {});
+      }
+    }
   }
 
   // ─── Settings ─────────────────────────────────────────────────────────────
@@ -123,10 +150,7 @@ export class TimetableService {
     const saved = await this.repo.save(entity);
 
     // Notify all teachers immediately on save & publish
-    const teachers = await this.teacherRepo.find({ where: { schoolId } });
-    teachers.forEach(teacher => {
-      this.emailService.sendTimetablePublishedNotification(teacher.email, teacher.name);
-    });
+    await this.notifyTeachers(schoolId, saved.name || 'New Timetable');
 
     return saved;
   }

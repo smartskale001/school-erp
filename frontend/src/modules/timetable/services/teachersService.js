@@ -6,7 +6,8 @@ function mapFromApi(t) {
     id: t.id,
     name: t.name,
     shortName: t.shortName || '',
-    subject: t.subjectNames?.[0] || '',
+    subject: t.subject?.name || t.subjectNames?.[0] || '',
+    subjectId: t.subjectId || '',
     classes: t.gradeLevel || [],
     phone: t.phone || '',
     email: t.email || '',
@@ -19,6 +20,10 @@ export async function getTeachers() {
   return list.map(mapFromApi);
 }
 
+export async function getSubjects() {
+  return apiRequest(API_ENDPOINTS.subjects.list);
+}
+
 export async function addTeacher(teacher) {
   const payload = {
     name: teacher.name,
@@ -26,8 +31,10 @@ export async function addTeacher(teacher) {
     email: teacher.email,
     password: teacher.password,
     phone: teacher.phone || '',
-    subjectIds: teacher.subject ? [teacher.subject.toLowerCase().replace(/\s+/g, '_')] : [],
-    subjectNames: teacher.subject ? [teacher.subject] : [],
+    subjectId: teacher.subjectId,
+    // Keep backward compatibility
+    subjectIds: teacher.subjectId ? [teacher.subjectId] : [],
+    subjectNames: teacher.subjectName ? [teacher.subjectName] : [],
     gradeLevel: teacher.classes || [],
   };
   const result = await apiRequest(API_ENDPOINTS.teachers.create, {
@@ -42,8 +49,10 @@ export async function updateTeacher(id, updates) {
     name: updates.name,
     shortName: updates.shortName,
     phone: updates.phone,
-    subjectIds: updates.subject ? [updates.subject.toLowerCase().replace(/\s+/g, '_')] : [],
-    subjectNames: updates.subject ? [updates.subject] : [],
+    subjectId: updates.subjectId,
+    // Keep backward compatibility
+    subjectIds: updates.subjectId ? [updates.subjectId] : [],
+    subjectNames: updates.subjectName ? [updates.subjectName] : [],
     gradeLevel: updates.classes || [],
   };
   const result = await apiRequest(API_ENDPOINTS.teachers.update(id), {
@@ -64,8 +73,9 @@ export async function cloneTeacher(teacher) {
     email: teacher.cloneEmail,
     password: teacher.clonePassword,
     phone: teacher.phone || '',
-    subjectIds: teacher.subject ? [teacher.subject.toLowerCase().replace(/\s+/g, '_')] : [],
-    subjectNames: teacher.subject ? [teacher.subject] : [],
+    subjectId: teacher.subjectId,
+    subjectIds: teacher.subjectId ? [teacher.subjectId] : [],
+    subjectNames: teacher.subjectName ? [teacher.subjectName] : [],
     gradeLevel: teacher.classes || [],
   };
   const result = await apiRequest(API_ENDPOINTS.teachers.create, {

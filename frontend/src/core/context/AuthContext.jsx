@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { authService } from '@/core/services/authService';
 import { apiRequest } from '@/core/api/client';
+import { requestNotificationPermission } from '@/utils/firebaseNotifications';
 
 const AuthContext = createContext(null);
 
@@ -30,6 +31,15 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      // Small delay to ensure browser is ready
+      setTimeout(() => {
+        requestNotificationPermission();
+      }, 2000);
+    }
+  }, [user]);
+
   const login = useCallback((userData) => {
     setUser(userData);
     setUserProfile(userData);
@@ -50,42 +60,52 @@ export function AuthProvider({ children }) {
   const isCoordinator = role === 'coordinator';
   const isTeacher     = role === 'teacher';
 
-  // What each role can do
   const canManageTasks          = level >= ROLE_LEVEL.teacher;
   const canManageTimetable      = level >= ROLE_LEVEL.coordinator;
   const canApproveLeave         = level >= ROLE_LEVEL.coordinator;
   const canApproveProxy         = level >= ROLE_LEVEL.principal;
   const canAssignProxy          = level >= ROLE_LEVEL.coordinator;
   const canViewReports          = level >= ROLE_LEVEL.coordinator;
-  const canConfigureMasterData  = level >= ROLE_LEVEL.admin;      // org settings, period slots, rules
+  const canConfigureMasterData  = level >= ROLE_LEVEL.admin;
   const canManageTimetableSetup = level >= ROLE_LEVEL.admin;
   const canCreateTasks          = level >= ROLE_LEVEL.coordinator;
   const canDeleteTasks          = role === 'admin';
 
+  // Memoize the context value so every consumer (NotificationBell, ClassesContext,
+  // AppLayout, etc.) only re-renders when auth state genuinely changes,
+  // not on every AuthProvider render.
+  const value = useMemo(() => ({
+    user,
+    userProfile,
+    role,
+    teacherId,
+    loading,
+    login,
+    logout,
+    isAdmin,
+    isPrincipal,
+    isCoordinator,
+    isTeacher,
+    canManageTasks,
+    canManageTimetable,
+    canApproveLeave,
+    canApproveProxy,
+    canAssignProxy,
+    canViewReports,
+    canConfigureMasterData,
+    canManageTimetableSetup,
+    canCreateTasks,
+    canDeleteTasks,
+  }), [
+    user, userProfile, role, teacherId, loading, login, logout,
+    isAdmin, isPrincipal, isCoordinator, isTeacher,
+    canManageTasks, canManageTimetable, canApproveLeave, canApproveProxy,
+    canAssignProxy, canViewReports, canConfigureMasterData,
+    canManageTimetableSetup, canCreateTasks, canDeleteTasks,
+  ]);
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      userProfile,
-      role,
-      teacherId,
-      loading,
-      login,
-      logout,
-      isAdmin,
-      isPrincipal,
-      isCoordinator,
-      isTeacher,
-      canManageTasks,
-      canManageTimetable,
-      canApproveLeave,
-      canApproveProxy,
-      canAssignProxy,
-      canViewReports,
-      canConfigureMasterData,
-      canManageTimetableSetup,
-      canCreateTasks,
-      canDeleteTasks,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -96,3 +116,4 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 }
+

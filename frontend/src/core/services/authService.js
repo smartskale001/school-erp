@@ -56,13 +56,13 @@ export const authService = {
       ...(teacherId ? { teacherId } : {}),
     });
     saveSession(data);
-    return data.user;
+    return data?.user || null;
   },
 
   login: async (email, password) => {
     const data = await post('/auth/login', { email, password });
     saveSession(data);
-    return data.user;
+    return data?.user || null;
   },
 
   logout: async () => {
@@ -80,9 +80,11 @@ export const authService = {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) throw new Error('No refresh token');
     const data = await post('/auth/refresh', { refreshToken });
-    localStorage.setItem('access_token', data.accessToken);
-    localStorage.setItem('refresh_token', data.refreshToken);
-    return data.accessToken;
+    if (data?.accessToken && data?.refreshToken) {
+      localStorage.setItem('access_token', data.accessToken);
+      localStorage.setItem('refresh_token', data.refreshToken);
+    }
+    return data?.accessToken;
   },
 
   changePassword: async (currentPassword, newPassword) => {
@@ -126,15 +128,23 @@ export const authService = {
   },
 
   getStoredUser: () => {
-    const raw = localStorage.getItem('user_profile');
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem('user_profile');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   },
 
   // Calls the callback immediately with the stored user profile
   onAuthChange: (callback) => {
-    const raw = localStorage.getItem('user_profile');
-    const user = raw ? JSON.parse(raw) : null;
-    callback(user);
+    try {
+      const raw = localStorage.getItem('user_profile');
+      const user = raw ? JSON.parse(raw) : null;
+      callback(user);
+    } catch {
+      callback(null);
+    }
     return () => {}; // no-op unsubscribe
   },
 };

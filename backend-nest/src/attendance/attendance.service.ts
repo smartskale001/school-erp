@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendanceEntity } from '../database/entities/attendance.entity';
 import { MarkAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
+import { AcademicYearsService } from '../academic-years/academic-years.service';
 
 interface CurrentUser { id: string; teacherId: string; }
 
@@ -11,6 +12,7 @@ export class AttendanceService {
   constructor(
     @InjectRepository(AttendanceEntity)
     private repo: Repository<AttendanceEntity>,
+    private academicYearService: AcademicYearsService,
   ) {}
 
   findAll(schoolId = 'school_001') {
@@ -24,11 +26,14 @@ export class AttendanceService {
   }
 
   async mark(dto: MarkAttendanceDto, user: CurrentUser) {
+    const activeYear = await this.academicYearService.getActiveAcademicYear();
+
     const entity = this.repo.create({
       ...dto,
       markedBy: user.id,
       markedAt: new Date(),
       schoolId: 'school_001',
+      academicYearId: activeYear.id,
     });
     return this.repo.save(entity);
   }

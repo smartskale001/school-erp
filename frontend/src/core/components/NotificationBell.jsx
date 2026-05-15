@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, CheckCheck, CalendarOff, ClipboardList, UserCheck } from "lucide-react";
+import { Bell, CheckCheck, CalendarOff, ClipboardList, UserCheck, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
 import { getLeaveApplications, getProxyAssignments } from "@/modules/leave/services/leaveService";
-import { getAllAssignmentsWithTasks } from "@/modules/tasks/services/tasksService";
+import { getAllAssignmentsWithTasks, getAssignmentsForTeacher } from "@/modules/tasks/services/tasksService";
 import { useNavigate } from "react-router-dom";
-
 import { notificationService } from "@/core/services/notificationService";
-import { MessageSquare } from "lucide-react";
+import { messaging, onMessage } from "@/firebase/firebase";
+import { showNotificationToast } from "@/utils/firebaseNotifications";
 
 function useNotifications() {
   const { role, teacherId, canApproveLeave, canApproveProxy, canAssignProxy } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,17 +20,33 @@ function useNotifications() {
     try {
       // 1. Fetch real notifications from DB
       const dbNotifications = await notificationService.getNotifications();
-      dbNotifications.forEach((n) => {
+      console.log('[DEBUG Frontend] dbNotifications:', dbNotifications);
+      (dbNotifications || []).forEach((n) => {
+        let icon = MessageSquare;
+        let color = n.isRead ? "text-gray-400" : "text-emerald-500";
+        
+        if (n.title === "Leave Approved") {
+          icon = CheckCircle2;
+          color = n.isRead ? "text-gray-400" : "text-emerald-500";
+        } else if (n.title === "Leave Rejected") {
+          icon = XCircle;
+          color = n.isRead ? "text-gray-400" : "text-red-500";
+        } else if (n.type === "feedback") {
+          icon = MessageSquare;
+          color = n.isRead ? "text-gray-400" : "text-blue-500";
+        }
+
         next.push({
           id: n.id,
-          dbId: n.id, // mark as DB-backed
-          icon: MessageSquare,
-          color: n.isRead ? "text-gray-400" : "text-emerald-500",
+          dbId: n.id,
+          icon: icon,
+          color: color,
           label: n.title,
           message: n.message,
-          path: n.type === "task" ? "/tasks" : "/leave",
+          path: n.type === "task" ? "/tasks" : n.type === "feedback" ? "/feedback" : "/leave",
           isRead: n.isRead,
           createdAt: n.createdAt,
+          type: n.type,
         });
       });
 
@@ -79,12 +96,17 @@ function useNotifications() {
       }
 
       // 3. Add existing virtual task alerts
-      const assignments = await getAllAssignmentsWithTasks();
+      let assignments = [];
+      if (role === "teacher") {
+        assignments = await getAssignmentsForTeacher();
+      } else if (["admin", "principal", "coordinator"].includes(role)) {
+        assignments = await getAllAssignmentsWithTasks();
+      }
+
       const now = new Date();
       if (role === "teacher" && teacherId) {
         const myOverdue = assignments.filter(
           (a) =>
-            a.assignedTo === teacherId &&
             a.status !== "completed" &&
             a.dueDate &&
             new Date(a.dueDate) < now
@@ -98,7 +120,7 @@ function useNotifications() {
             path: "/tasks",
           });
         }
-      } else {
+      } else if (["admin", "principal", "coordinator"].includes(role)) {
         const overdue = assignments.filter(
           (a) =>
             a.status !== "completed" &&
@@ -131,7 +153,22 @@ function useNotifications() {
   useEffect(() => {
     load();
     const timer = setInterval(load, 30_000);
-    return () => clearInterval(timer);
+
+    // Real-time foreground listener
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log("[NotificationBell] Foreground notification received:", payload);
+      
+      // Show in-app toast
+      showNotificationToast(payload, navigate);
+
+      // Instantly refresh notification list
+      load();
+    });
+
+    return () => {
+      clearInterval(timer);
+      unsubscribe();
+    };
   }, [load]);
 
   const markAsRead = async (id) => {
@@ -211,7 +248,24 @@ export default function NotificationBell() {
                   >
                     <Icon size={16} className={`mt-0.5 shrink-0 ${item.color}`} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-700">{item.label}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                        {item.type === 'leave' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
+                            Leave
+                          </span>
+                        )}
+                        {item.type === 'task' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                            Task
+                          </span>
+                        )}
+                        {item.type === 'feedback' && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            Feedback
+                          </span>
+                        )}
+                      </div>
                       {item.message && (
                         <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                           {item.message}

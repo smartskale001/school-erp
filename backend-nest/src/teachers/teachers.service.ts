@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
+import { SubjectEntity } from '../database/entities/subject.entity';
 import { CreateTeacherDto, UpdateTeacherDto } from './dto/teachers.dto';
 import { Role } from '../common/enums/role.enum';
 
@@ -15,6 +16,8 @@ export class TeachersService {
     private repo: Repository<TeacherEntity>,
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
+    @InjectRepository(SubjectEntity)
+    private subjectRepo: Repository<SubjectEntity>,
   ) {}
 
   findAll(schoolId = 'school_001') {
@@ -28,6 +31,11 @@ export class TeachersService {
   }
 
   async create(dto: CreateTeacherDto) {
+    if (dto.subjectId) {
+      const subject = await this.subjectRepo.findOne({ where: { id: dto.subjectId } });
+      if (!subject) throw new NotFoundException('Subject not found');
+    }
+
     const existingUser = await this.userRepo.findOne({ where: { email: dto.email } });
     if (existingUser) throw new ConflictException('Email already registered');
 
@@ -61,7 +69,13 @@ export class TeachersService {
   }
 
   async update(id: string, dto: UpdateTeacherDto) {
-    await this.findOne(id);
+    const teacher = await this.findOne(id);
+
+    if (dto.subjectId) {
+      const subject = await this.subjectRepo.findOne({ where: { id: dto.subjectId } });
+      if (!subject) throw new NotFoundException('Subject not found');
+    }
+
     await this.repo.update(id, dto);
 
     const userUpdates: Partial<UserEntity> = {};

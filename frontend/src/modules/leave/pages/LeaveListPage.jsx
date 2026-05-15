@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Plus, CalendarOff, CheckCircle2, XCircle, Clock, AlertCircle, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
@@ -41,19 +41,21 @@ export default function LeaveListPage() {
   const [approveModal, setApproveModal] = useState(null); // leave id being approved
   const [approveRemarks, setApproveRemarks] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       if (canApprove) {
-        setLeaves(await getLeaveApplications());
+        const data = await getLeaveApplications();
+        setLeaves(Array.isArray(data) ? data : []);
       } else {
-        setLeaves(await getLeaveApplicationsForTeacher());
+        const data = await getLeaveApplicationsForTeacher();
+        setLeaves(Array.isArray(data) ? data : []);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setLeaves([]); }
     setLoading(false);
-  };
+  }, [canApprove]);
 
-  useEffect(() => { load(); }, [canApprove]);
+  useEffect(() => { load(); }, [load]);
 
   const handleApprove = (id) => {
     setApproveRemarks('');
@@ -160,9 +162,15 @@ export default function LeaveListPage() {
                       <span className="font-medium text-gray-900 text-sm">
                         {teacherName}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${LEAVE_TYPE_CLS[leave.leaveType] || 'bg-gray-50 text-gray-600'}`}>
-                        {leave.leaveType?.charAt(0).toUpperCase() + leave.leaveType?.slice(1)}
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${LEAVE_TYPE_CLS[leave.leaveType] || 'bg-gray-50 text-gray-600'}`}>
+                        {leave.leaveType}
                       </span>
+                      {leave.leaveDuration && (
+                        <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                          {leave.leaveDuration === 'HALF_DAY' ? 'Half Day' : 'Full Day'}
+                          {leave.deductedLeaves && ` (${Number(leave.deductedLeaves)})`}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
                       {leave.startDate} → {leave.endDate}

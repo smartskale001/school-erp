@@ -5,11 +5,17 @@ import { TimetableController } from './timetable.controller';
 import { TimetableEntity } from '../database/entities/timetable.entity';
 import { TimetableSettingsEntity } from '../database/entities/timetable-settings.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
-import { EmailService } from '../tasks/email.service';
+import { AcademicYearsModule } from '../academic-years/academic-years.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UserEntity } from '../database/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TimetableEntity, TimetableSettingsEntity, TeacherEntity])],
-  providers: [TimetableService, EmailService],
+  imports: [
+    TypeOrmModule.forFeature([TimetableEntity, TimetableSettingsEntity, TeacherEntity, UserEntity]),
+    AcademicYearsModule,
+    NotificationsModule,
+  ],
+  providers: [TimetableService],
   controllers: [TimetableController],
   exports: [TimetableService],
 })

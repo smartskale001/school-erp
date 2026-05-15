@@ -10,6 +10,13 @@ export class SubmitLeaveDto {
 
   @ApiProperty() @IsString() startDate: string;
   @ApiProperty() @IsString() endDate: string;
+
+  @ApiProperty({ enum: ['FULL_DAY', 'HALF_DAY'], default: 'FULL_DAY' })
+  @IsString()
+  @IsIn(['FULL_DAY', 'HALF_DAY'])
+  @IsOptional()
+  leaveDuration?: string;
+
   @ApiProperty({ required: false }) @IsString() @IsOptional() reason?: string;
 }
 

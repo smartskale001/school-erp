@@ -11,6 +11,9 @@ export class TimetableEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'academic_year_id', nullable: true })
+  academicYearId: number;
+
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

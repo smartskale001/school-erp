@@ -1,7 +1,11 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { TeacherEntity } from './teacher.entity';
 
 @Entity('subjects')
 export class SubjectEntity {
+  @OneToMany(() => TeacherEntity, (teacher) => teacher.subject)
+  teachers: TeacherEntity[];
+
   @PrimaryColumn({ length: 20 })
   id: string;
 

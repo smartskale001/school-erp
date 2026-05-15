@@ -6,6 +6,7 @@ import { days, periods } from "./TimetablePage";
 import { Plus, Check, Pencil, Copy, Trash2 } from "lucide-react";
 import {
   getTeachers,
+  getSubjects,
   addTeacher,
   updateTeacher,
   deleteTeacher,
@@ -39,11 +40,17 @@ export default function TeachersPage() {
   const { classes } = useClasses();
   const { role } = useAuth();
   const [teachers, setTeachers] = useState([]);
-  // Load teachers on mount
+  const [subjects, setSubjects] = useState([]);
+
+  // Load teachers and subjects on mount
   React.useEffect(() => {
     (async () => {
-      const list = await getTeachers();
-      setTeachers(list);
+      const [teacherList, subjectList] = await Promise.all([
+        getTeachers(),
+        getSubjects()
+      ]);
+      setTeachers(teacherList);
+      setSubjects(subjectList);
     })();
   }, []);
   const [query, setQuery] = useState("");
@@ -52,6 +59,7 @@ export default function TeachersPage() {
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
   const [subject, setSubject] = useState("");
+  const [subjectId, setSubjectId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selectedClasses, setSelectedClasses] = useState([]);
@@ -102,6 +110,7 @@ export default function TeachersPage() {
     setName("");
     setShortName("");
     setSubject("");
+    setSubjectId("");
     setEmail("");
     setPassword("");
     setSelectedClasses([]);
@@ -116,25 +125,33 @@ export default function TeachersPage() {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !subject.trim()) return;
+    if (!name.trim() || !subjectId) {
+      setSaveError("Name and Subject are required.");
+      return;
+    }
     if (!editingId && (!email.trim() || !password.trim())) {
       setSaveError("Email and password are required.");
       return;
     }
     setSaveError("");
+    const selectedSubject = subjects.find(s => s.id === subjectId);
+    const subjectName = selectedSubject ? selectedSubject.name : "";
+
     try {
       if (editingId) {
         await updateTeacher(editingId, {
           name: name.trim(),
           shortName: shortName.trim() || autoShortName(name.trim()),
-          subject: subject.trim(),
+          subjectId,
+          subjectName,
           classes: selectedClasses.length ? selectedClasses : [],
         });
       } else {
         await addTeacher({
           name: name.trim(),
           shortName: shortName.trim() || autoShortName(name.trim()),
-          subject: subject.trim(),
+          subjectId,
+          subjectName,
           email: email.trim(),
           password: password.trim(),
           phone: "",
@@ -153,6 +170,7 @@ export default function TeachersPage() {
     setEditingId(teacher.id);
     setName(teacher.name || "");
     setShortName(teacher.shortName || "");
+    setSubjectId(teacher.subjectId || "");
     setSubject(teacher.subject || "");
     setEmail(teacher.email || "");
     setPassword("");
@@ -166,6 +184,7 @@ export default function TeachersPage() {
     resetForm();
     setName(`${teacher.name} (Copy)`);
     setShortName(teacher.shortName ? `${teacher.shortName}-2` : "");
+    setSubjectId(teacher.subjectId || "");
     setSubject(teacher.subject || "");
     setSelectedClasses(teacher.classes || []);
     setIsAddOpen(true);
@@ -354,7 +373,18 @@ export default function TeachersPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Subject *</label>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject name" />
+              <select
+                className="w-full h-10 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={subjectId}
+                onChange={(e) => setSubjectId(e.target.value)}
+              >
+                <option value="">Select Subject</option>
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">

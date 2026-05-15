@@ -108,4 +108,11 @@ export const API_ENDPOINTS = {
     pendingTasks: '/reports/tasks/pending',
     overdueTasks: '/reports/tasks/overdue',
   },
+  feedback: {
+    base: '/feedback',
+    my: '/feedback/my',
+    sent: '/feedback/sent',
+    teachers: '/feedback/teachers',
+    item: (id) => `/feedback/${id}`,
+  },
 };
