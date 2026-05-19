@@ -48,6 +48,20 @@ export default function LeaveApplicationPage() {
     return day === 0 || day === 6;
   };
 
+  const calculateDeduction = () => {
+    if (leaveDuration === 'HALF_DAY') return 0.5;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays + 1;
+      }
+    }
+    return 1;
+  };
+
   const validate = () => {
     const e = {};
     if (!startDate) e.startDate = 'Start date is required';
@@ -64,7 +78,7 @@ export default function LeaveApplicationPage() {
     if (endDate && isWeekend(endDate)) e.endDate = 'Leave cannot end on a weekend';
     if (startDate && endDate && endDate < startDate) e.endDate = 'End date must be on or after start date';
     
-    const deduction = leaveDuration === 'HALF_DAY' ? 0.5 : 1;
+    const deduction = calculateDeduction();
     if (stats && stats.remainingLeaves < deduction) {
       e.submit = 'Insufficient leave balance';
     }
@@ -244,7 +258,7 @@ export default function LeaveApplicationPage() {
           <Info size={14} className="shrink-0 mt-0.5" />
           <p>
             Your leave application will be reviewed by the Administrator or Principal.
-            {leaveDuration === 'HALF_DAY' ? ' Half-day leave will deduct 0.5 from your balance.' : ' Full-day leave will deduct 1.0 from your balance.'}
+            {leaveDuration === 'HALF_DAY' ? ' Half-day leave will deduct 0.5 from your balance.' : ` This leave will deduct ${calculateDeduction()} days from your balance.`}
           </p>
         </div>
 

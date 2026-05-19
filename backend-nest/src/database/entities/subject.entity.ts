@@ -21,6 +21,9 @@ export class SubjectEntity {
   @Column({ name: 'is_elective', default: false })
   isElective: boolean;
 
+  @Column({ type: 'int', default: 5 })
+  difficulty: number;
+
   @Column('text', { array: true, name: 'grade_level', default: [] })
   gradeLevel: string[];
 

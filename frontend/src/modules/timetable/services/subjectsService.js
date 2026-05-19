@@ -9,7 +9,7 @@ function mapFromApi(s) {
     name: s.name,
     shortName: s.code || '',
     availability: s.periodsPerWeek || 20,
-    difficulty: 5,
+    difficulty: s.difficulty !== undefined ? s.difficulty : 5,
     classes: s.gradeLevel || [],
   };
 }
@@ -30,6 +30,7 @@ export async function addSubject(subject) {
     name: subject.name,
     code: subject.shortName || subject.name.slice(0, 4).toUpperCase(),
     periodsPerWeek: Number(subject.availability) || 20,
+    difficulty: Number(subject.difficulty) || 5,
     gradeLevel: subject.classes || [],
   };
   const result = await apiRequest(API_ENDPOINTS.subjects.create, {
@@ -45,6 +46,7 @@ export async function updateSubject(id, updates) {
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.shortName !== undefined) payload.code = updates.shortName;
   if (updates.availability !== undefined) payload.periodsPerWeek = Number(updates.availability);
+  if (updates.difficulty !== undefined) payload.difficulty = Number(updates.difficulty);
   if (updates.classes !== undefined) payload.gradeLevel = updates.classes;
   const result = await apiRequest(API_ENDPOINTS.subjects.update(id), {
     method: 'PATCH',

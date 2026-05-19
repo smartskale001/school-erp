@@ -78,7 +78,7 @@ export class TimetableService {
     const updated = await this.repo.findOne({ where: { id } });
 
     // Notify all teachers about the newly published timetable
-    await this.notifyTeachers(tt.schoolId, tt.name);
+    await this.notifyTeachers(tt.schoolId, 'New Timetable');
 
     return updated;
   }
@@ -150,7 +150,7 @@ export class TimetableService {
     const saved = await this.repo.save(entity);
 
     // Notify all teachers immediately on save & publish
-    await this.notifyTeachers(schoolId, saved.name || 'New Timetable');
+    await this.notifyTeachers(schoolId, 'New Timetable');
 
     return saved;
   }

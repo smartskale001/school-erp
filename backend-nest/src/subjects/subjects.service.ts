@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -37,6 +37,13 @@ export class SubjectsService {
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.repo.delete(id);
+    try {
+      await this.repo.delete(id);
+    } catch (error) {
+      if (error.code === '23503' || (error.message && error.message.includes('violates foreign key constraint'))) {
+        throw new ConflictException('Cannot delete this subject because it is currently assigned to one or more teachers. Please reassign the teachers first.');
+      }
+      throw error;
+    }
   }
 }

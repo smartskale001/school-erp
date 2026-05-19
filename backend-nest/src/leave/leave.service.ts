@@ -119,7 +119,18 @@ export class LeaveService {
     const teacherId = await this.getTeacherId(user);
     const activeYear = await this.academicYearService.getActiveAcademicYear();
 
-    const deduction = dto.leaveDuration === 'HALF_DAY' ? 0.5 : 1;
+    let deduction = 1;
+    if (dto.leaveDuration === 'HALF_DAY') {
+      deduction = 0.5;
+    } else {
+      const start = new Date(dto.startDate);
+      const end = new Date(dto.endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        deduction = diffDays + 1;
+      }
+    }
 
     // Check balance (uses getTeacherBalance to ensure one exists)
     const balance = await this.getTeacherBalance(teacherId, activeYear.id);

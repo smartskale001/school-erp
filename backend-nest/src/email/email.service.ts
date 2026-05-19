@@ -41,9 +41,8 @@ export class EmailService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Failed to send email to ${to}`, error.response?.body || error.message);
       console.error(`[DEBUG SENDGRID] FAILURE! Error details:`, JSON.stringify(error.response?.body, null, 2));
-      throw error;
-    }
-      this.logger.error(`Error in sendEmail for ${to}: ${error.message}`);
+      // Swallow the error to prevent unhandled promise rejections from crashing the server
+      return false;
     }
   }
 

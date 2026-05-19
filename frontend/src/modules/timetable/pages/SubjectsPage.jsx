@@ -39,6 +39,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 
 const availabilityOptions = [18, 20, 22, 24, 26, 28, 30, 35, 40];
@@ -57,6 +58,8 @@ export default function SubjectsPage() {
   const [subjectClasses, setSubjectClasses] = useState([]);
   const [tab, setTab] = useState("subjects");
   const [saveError, setSaveError] = useState("");
+  const [subjectToDelete, setSubjectToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const importRef = useRef(null);
 
   useEffect(() => {
@@ -131,13 +134,23 @@ export default function SubjectsPage() {
     setIsAddOpen(true);
   };
 
-  const handleDelete = async (subjectId) => {
+  const confirmDelete = (subject) => {
+    setSubjectToDelete(subject);
+  };
+
+  const executeDelete = async () => {
+    if (!subjectToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteSubject(subjectId);
+      await deleteSubject(subjectToDelete.id);
       invalidateSubjectsCache();
       setSubjects(await getSubjects());
+      toast.success("Subject deleted successfully.");
+      setSubjectToDelete(null);
     } catch (err) {
-      console.error("Failed to delete subject:", err);
+      toast.error(err.response?.data?.message || err.message || "Failed to delete subject.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -253,7 +266,17 @@ export default function SubjectsPage() {
                             min={1}
                             max={10}
                             value={difficulty}
-                            onChange={(e) => setDifficulty(e.target.value)}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val === "") {
+                                setDifficulty("");
+                                return;
+                              }
+                              let num = Number(val);
+                              if (num > 10) num = 10;
+                              if (num < 1) num = 1;
+                              setDifficulty(num);
+                            }}
                           />
                         </div>
                         <div>
@@ -385,7 +408,7 @@ export default function SubjectsPage() {
                     <button
                       type="button"
                       className="text-red-600 hover:text-red-700 flex items-center gap-1"
-                      onClick={() => handleDelete(s.id)}
+                      onClick={() => confirmDelete(s)}
                     >
                       <Trash2 size={14} /> Delete
                     </button>
@@ -397,6 +420,30 @@ export default function SubjectsPage() {
               ) : null}
             </div>
           </Card>
+
+          <Dialog open={!!subjectToDelete} onOpenChange={(open) => !open && setSubjectToDelete(null)}>
+            <DialogContent className="bg-white border border-gray-200 shadow-xl">
+              <DialogHeader>
+                <DialogTitle>Delete Subject</DialogTitle>
+              </DialogHeader>
+              <div className="py-2">
+                <p className="text-sm text-gray-700">Are you sure you want to delete this subject?</p>
+                <p className="text-sm text-gray-700 mt-1">This action cannot be undone.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSubjectToDelete(null)} disabled={isDeleting}>
+                  Cancel
+                </Button>
+                <Button 
+                  className="bg-red-600 hover:bg-red-700 text-white" 
+                  onClick={executeDelete} 
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       ) : (
         <ClassSubjectsView />
@@ -406,21 +453,13 @@ export default function SubjectsPage() {
 }
 
 function DifficultyBar({ value }) {
-  const total = 10;
+  const percentage = Math.min(100, Math.max(0, (Number(value) / 10) * 100));
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: total }).map((_, i) => {
-        const active = i < value;
-        return (
-          <span
-            key={i}
-            className={
-              "h-4 w-2 rounded-full " +
-              (active ? "bg-orange-500" : "bg-gray-200")
-            }
-          />
-        );
-      })}
+    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div 
+        className="h-full bg-orange-500 transition-all duration-300" 
+        style={{ width: `${percentage}%` }}
+      />
     </div>
   );
 }
