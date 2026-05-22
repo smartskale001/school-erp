@@ -2,7 +2,7 @@ import { messaging, getToken, onMessage } from "../firebase/firebase";
 import { apiRequest } from "@/core/api/client";
 import { toast } from "sonner";
 
-const VAPID_KEY = "BEng2ZlFVgB0s_oy3JVAK7wIUEzJ-hLlGuR5W95F0TcmX1XuUOz5xmNu2kR7xG9AzxcvZqxt1B7W8J6y1PQtojY";
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || "BEng2ZlFVgB0s_oy3JVAK7wIUEzJ-hLlGuR5W95F0TcmX1XuUOz5xmNu2kR7xG9AzxcvZqxt1B7W8J6y1PQtojY";
 
 // Deduplication cache
 const processedNotifications = new Set();
@@ -86,6 +86,16 @@ export const requestNotificationPermission = async () => {
   if (!("Notification" in window)) {
     console.log("This browser does not support desktop notification");
     return;
+  }
+
+  // Explicitly register service worker to enable background notifications
+  if ("serviceWorker" in navigator) {
+    try {
+      await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log("Service Worker registered successfully for FCM.");
+    } catch (err) {
+      console.error("Service worker registration failed:", err);
+    }
   }
 
   // Safe wrapper to avoid repeated prompts

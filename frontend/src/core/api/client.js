@@ -6,16 +6,31 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
  * Base API client. Attaches JWT access token and auto-refreshes on 401.
  */
 export async function apiRequest(path, options = {}) {
-  const makeRequest = async (token) =>
-    fetch(`${API_URL}${path}`, {
-      method: 'GET',
-      ...options,
-      headers: {
-        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-    });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+
+  const makeRequest = async (token) => {
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        method: 'GET',
+        ...options,
+        signal: controller.signal,
+        headers: {
+          ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers || {}),
+        },
+      });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out after 15 seconds');
+      }
+      throw error;
+    }
+  };
 
   let token = getAccessToken();
   let response = await makeRequest(token);

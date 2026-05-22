@@ -19,10 +19,12 @@ import { AcademicYearsModule } from './academic-years/academic-years.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { EmailModule } from './email/email.module';
+import { AppController } from './app.controller';
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate }),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -43,5 +45,6 @@ import { EmailModule } from './email/email.module';
     FirebaseModule,
     EmailModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -68,7 +68,8 @@ export class TasksController {
     @UploadedFile() file?: any,
   ) {
     if (file) {
-      dto.fileUrl = `/uploads/${file.filename}`;
+      const baseUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+      dto.fileUrl = `${baseUrl}/uploads/${file.filename}`;
     }
     return this.svc.createTask(dto, user);
   }
