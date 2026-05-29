@@ -16,6 +16,7 @@ import {
   Leaf,
   Sigma,
   Languages,
+  Check,
 } from "lucide-react";
 import { getSubjects, addSubject, updateSubject, deleteSubject, invalidateSubjectsCache } from "@/modules/timetable/services/subjectsService";
 import { useClasses } from "@/core/context/ClassesContext";
@@ -41,8 +42,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-
-const availabilityOptions = [18, 20, 22, 24, 26, 28, 30, 35, 40];
 
 export default function SubjectsPage() {
   const { classes: classesRaw } = useClasses();
@@ -370,26 +369,10 @@ export default function SubjectsPage() {
                     <DifficultyBar value={Number(s.difficulty) || 0} />
                     <span className="text-gray-500">{Number(s.difficulty) || 0}/10</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={String(Number(s.availability) || 0)}
-                      onValueChange={(val) => handleAvailabilityChange(s.id, val)}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availabilityOptions.map((opt) => (
-                          <SelectItem key={opt} value={String(opt)}>
-                            {opt} periods
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="text-emerald-600 font-medium">
-                      {Number(s.availability) || 0} periods
-                    </span>
-                  </div>
+                  <AvailabilityInput 
+                    subject={s} 
+                    onChange={handleAvailabilityChange} 
+                  />
                   <div className="flex items-center gap-4 text-sm">
                     <button
                       type="button"
@@ -527,4 +510,74 @@ function getSubjectBadge(name) {
     icon: <BookOpen size={18} className="text-gray-600" />,
     containerClass: "bg-gray-50 border-gray-200",
   };
+}
+
+function AvailabilityInput({ subject, onChange }) {
+  const [value, setValue] = useState(Number(subject.availability) || 0);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setValue(Number(subject.availability) || 0);
+  }, [subject.availability]);
+
+  useEffect(() => {
+    if (saved) {
+      const timer = setTimeout(() => setSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [saved]);
+
+  const handleCommit = async (newValue) => {
+    const parsed = parseInt(newValue, 10);
+    if (isNaN(parsed) || String(newValue).trim() === "") {
+      setValue(Number(subject.availability) || 0);
+      return;
+    }
+    if (parsed < 0) {
+      toast.error("Periods cannot be negative");
+      setValue(Number(subject.availability) || 0);
+      return;
+    }
+    if (parsed > 40) {
+      toast.error("Maximum allowed periods is 40");
+      setValue(Number(subject.availability) || 0);
+      return;
+    }
+    if (parsed !== Number(subject.availability)) {
+      setValue(parsed);
+      await onChange(subject.id, parsed);
+      setSaved(true);
+    } else {
+      setValue(parsed);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="number"
+        min="0"
+        max="40"
+        placeholder="Periods"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={(e) => handleCommit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.target.blur();
+          } else if (e.key === "Escape") {
+            const original = Number(subject.availability) || 0;
+            e.target.value = original;
+            setValue(original);
+            e.target.blur();
+          }
+        }}
+        className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      <span className="text-emerald-600 font-medium flex items-center gap-1">
+        periods
+        {saved && <Check size={16} className="text-emerald-500" />}
+      </span>
+    </div>
+  );
 }
