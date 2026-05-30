@@ -19,6 +19,7 @@ import {
   Megaphone,
   Mail,
   ClipboardCheck,
+  Trophy,
 } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
 import { useAcademicYear } from "@/core/context/AcademicYearContext";
@@ -138,6 +139,7 @@ export default function AppLayout({ children }) {
                 { label: "Mailbox", icon: Mail, path: "/student/mailbox", badge: "2" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
                 { label: "Homework", icon: BookOpen, path: "/student/homework" },
+                { label: "Achievements", icon: Trophy, path: "/student/achievements" },
               ],
             }
           ] : navSections).map((section) => {

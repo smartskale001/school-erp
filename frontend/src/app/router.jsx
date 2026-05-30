@@ -19,6 +19,7 @@ const StudentCircularsPage   = React.lazy(() => import('../modules/student/pages
 const StudentMailboxPage     = React.lazy(() => import('../modules/student/pages/StudentMailboxPage'));
 const StudentAttendancePage  = React.lazy(() => import('../modules/student/pages/StudentAttendancePage'));
 const StudentHomeworkPage    = React.lazy(() => import('../modules/student/pages/StudentHomeworkPage'));
+const StudentAchievementsPage = React.lazy(() => import('../modules/student/pages/StudentAchievementsPage'));
 const TimetablePage          = React.lazy(() => import('../modules/timetable/pages/TimetablePage'));
 const OrganizationSettingsPage = React.lazy(() => import('../modules/timetable/pages/OrganizationSettingsPage'));
 const ClassTimeManagement    = React.lazy(() => import('../modules/timetable/pages/ClassTimeManagement'));
@@ -149,6 +150,10 @@ export default function AppRouter() {
             <Route
               path="/student/homework"
               element={role === 'student' ? <StudentHomeworkPage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/achievements"
+              element={role === 'student' ? <StudentAchievementsPage /> : <Navigate to="/" replace />}
             />
 
             {/* Profile — all roles */}
