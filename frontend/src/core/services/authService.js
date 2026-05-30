@@ -65,6 +65,12 @@ export const authService = {
     return data?.user || null;
   },
 
+  studentLogin: async (studentId, password) => {
+    const data = await post('/auth/student-login', { studentId, password });
+    saveSession(data);
+    return data?.user || null;
+  },
+
   logout: async () => {
     const token = getAccessToken();
     if (token) {

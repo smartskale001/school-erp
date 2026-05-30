@@ -20,6 +20,7 @@ import { NotificationEntity } from './entities/notification.entity';
 import { AcademicYearEntity } from './entities/academic-year.entity';
 import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
 import { FeedbackEntity } from './entities/feedback.entity';
+import { StudentEntity } from './entities/student.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -41,6 +42,7 @@ const ALL_ENTITIES = [
   AcademicYearEntity,
   TeacherLeaveBalanceEntity,
   FeedbackEntity,
+  StudentEntity,
 ];
 
 @Module({

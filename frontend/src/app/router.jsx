@@ -14,6 +14,11 @@ import SignupPage from '../modules/auth/pages/SignupPage';
 // 100+ simultaneous ESM HTTP requests at startup, exhausting browser limits.
 // With React.lazy() each page's module tree is only fetched when first visited.
 const DashboardPage          = React.lazy(() => import('../modules/dashboard/pages/DashboardPage'));
+const StudentDashboard       = React.lazy(() => import('../modules/dashboard/pages/StudentDashboard'));
+const StudentCircularsPage   = React.lazy(() => import('../modules/student/pages/StudentCircularsPage'));
+const StudentMailboxPage     = React.lazy(() => import('../modules/student/pages/StudentMailboxPage'));
+const StudentAttendancePage  = React.lazy(() => import('../modules/student/pages/StudentAttendancePage'));
+const StudentHomeworkPage    = React.lazy(() => import('../modules/student/pages/StudentHomeworkPage'));
 const TimetablePage          = React.lazy(() => import('../modules/timetable/pages/TimetablePage'));
 const OrganizationSettingsPage = React.lazy(() => import('../modules/timetable/pages/OrganizationSettingsPage'));
 const ClassTimeManagement    = React.lazy(() => import('../modules/timetable/pages/ClassTimeManagement'));
@@ -70,7 +75,7 @@ export default function AppRouter() {
 
           <Route element={user ? <AppLayout /> : <Navigate to="/login" replace />}>
             {/* Dashboard — all roles */}
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/" element={role === 'student' ? <StudentDashboard /> : <DashboardPage />} />
 
             {/* Timetable setup — visible to all, but Teachers/Subjects/Rooms restricted */}
             <Route path="/organization" element={<OrganizationSettingsPage />} />
@@ -126,6 +131,24 @@ export default function AppRouter() {
                   <Navigate to="/" replace />
                 )
               }
+            />
+
+            {/* Student-only routes */}
+            <Route
+              path="/student/circulars"
+              element={role === 'student' ? <StudentCircularsPage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/mailbox"
+              element={role === 'student' ? <StudentMailboxPage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/attendance"
+              element={role === 'student' ? <StudentAttendancePage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/homework"
+              element={role === 'student' ? <StudentHomeworkPage /> : <Navigate to="/" replace />}
             />
 
             {/* Profile — all roles */}

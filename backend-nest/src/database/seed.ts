@@ -23,6 +23,7 @@ import { FeeEntity } from './entities/fee.entity';
 import { ReportEntity } from './entities/report.entity';
 import { AcademicYearEntity } from './entities/academic-year.entity';
 import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
+import { StudentEntity } from './entities/student.entity';
 
 dotenv.config();
 
@@ -40,7 +41,7 @@ const AppDataSource = new DataSource({
     RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
     LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
     AttendanceEntity, FeeEntity, ReportEntity, AcademicYearEntity,
-    TeacherLeaveBalanceEntity,
+    TeacherLeaveBalanceEntity, StudentEntity,
   ],
   synchronize: true,
 });
@@ -211,6 +212,18 @@ async function seed() {
   process.stdout.write('Seeding teacher users (34)...');
   await AppDataSource.getRepository(UserEntity).upsert(teacherUsers, ['email']);
   console.log(' 34 rows OK');
+
+  process.stdout.write('Seeding demo students (5)...');
+  const studentPasswordHash = await bcrypt.hash('12345', 12);
+  const demoStudents: Partial<StudentEntity>[] = [
+    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A" },
+    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B" },
+    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A" },
+    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C" },
+    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B" }
+  ];
+  await AppDataSource.getRepository(StudentEntity).upsert(demoStudents, ['studentId']);
+  console.log(' 5 rows OK');
 
   console.log(`\n🎉 Seed complete! Default teacher password: ${DEFAULT_TEACHER_PASSWORD}\n`);
   await AppDataSource.destroy();

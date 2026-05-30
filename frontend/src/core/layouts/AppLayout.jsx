@@ -16,6 +16,9 @@ import {
   UserCircle,
   Settings,
   MessageSquare,
+  Megaphone,
+  Mail,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
 import { useAcademicYear } from "@/core/context/AcademicYearContext";
@@ -83,7 +86,7 @@ export default function AppLayout({ children }) {
     }
   }, [userProfile]);
 
-  const displayName = userProfile?.name || userProfile?.email || "User";
+  const displayName = userProfile?.fullName || userProfile?.name || userProfile?.email || "User";
   const initials = (displayName || "User")
     .split(" ")
     .filter(Boolean)
@@ -119,7 +122,25 @@ export default function AppLayout({ children }) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-5">
-          {navSections.map((section) => {
+          {(role === 'student' ? [
+            {
+              label: "OVERVIEW",
+              items: [
+                { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+              ],
+            },
+            {
+              label: "ACADEMICS",
+              items: [
+                { label: "Timetable", icon: CalendarDays, path: "/timetable" },
+                { label: "Assignments", icon: ClipboardList, path: "/tasks" },
+                { label: "Circulars", icon: Megaphone, path: "/student/circulars" },
+                { label: "Mailbox", icon: Mail, path: "/student/mailbox", badge: "2" },
+                { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
+                { label: "Homework", icon: BookOpen, path: "/student/homework" },
+              ],
+            }
+          ] : navSections).map((section) => {
             const visibleItems = section.items.filter(
               (item) => !item.roles || item.roles.includes(role)
             );
@@ -148,7 +169,12 @@ export default function AppLayout({ children }) {
                         {({ isActive }) => (
                           <>
                             <Icon size={16} className={isActive ? "text-blue-600" : "text-gray-400"} />
-                            <span>{item.label}</span>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.badge && (
+                              <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                {item.badge}
+                              </span>
+                            )}
                           </>
                         )}
                       </NavLink>

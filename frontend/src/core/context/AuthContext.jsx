@@ -20,13 +20,16 @@ export function AuthProvider({ children }) {
     if (stored) {
       setUser(stored);
       setUserProfile(stored);
-      // Refresh profile from API in background to pick up any server-side changes
-      apiRequest('/auth/me')
-        .then((profile) => {
-          setUserProfile(profile);
-          localStorage.setItem('user_profile', JSON.stringify(profile));
-        })
-        .catch(() => {});
+      // Students have a separate DB table — /auth/me only covers the users table.
+      // Skip the background refresh for students; the stored login profile is sufficient.
+      if (stored.role !== 'student') {
+        apiRequest('/auth/me')
+          .then((profile) => {
+            setUserProfile(profile);
+            localStorage.setItem('user_profile', JSON.stringify(profile));
+          })
+          .catch(() => {});
+      }
     }
     setLoading(false);
   }, []);
