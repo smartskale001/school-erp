@@ -20,6 +20,7 @@ import {
   Mail,
   ClipboardCheck,
   Trophy,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/core/context/AuthContext";
 import { useAcademicYear } from "@/core/context/AcademicYearContext";
@@ -140,6 +141,7 @@ export default function AppLayout({ children }) {
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
                 { label: "Homework", icon: BookOpen, path: "/student/homework" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
+                { label: "Syllabus", icon: FileText, path: "/student/syllabus" },
               ],
             }
           ] : navSections).map((section) => {
