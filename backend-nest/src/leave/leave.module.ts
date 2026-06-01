@@ -7,12 +7,20 @@ import { ProxyAssignmentEntity } from '../database/entities/proxy-assignment.ent
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { UserEntity } from '../database/entities/user.entity';
 import { TeacherLeaveBalanceEntity } from '../database/entities/teacher-leave-balance.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 import { AcademicYearsModule } from '../academic-years/academic-years.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LeaveApplicationEntity, ProxyAssignmentEntity, TeacherEntity, UserEntity, TeacherLeaveBalanceEntity]),
+    TypeOrmModule.forFeature([
+      LeaveApplicationEntity,
+      ProxyAssignmentEntity,
+      TeacherEntity,
+      UserEntity,
+      TeacherLeaveBalanceEntity,
+      StudentEntity,
+    ]),
     NotificationsModule,
     AcademicYearsModule
   ],

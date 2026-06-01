@@ -103,17 +103,19 @@ function AdminDashboard() {
   const activeTasks    = assignments.filter(a => !['cancelled', 'completed'].includes(a.status)).length;
   const overdueTasks   = assignments.filter(a => a.status === 'overdue').length;
   const completedTasks = assignments.filter(a => a.status === 'completed').length;
-  const pendingLeaves  = leaves.filter(l => l.status === 'pending').length;
+  const pendingTeacherLeaves  = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student').length;
+  const pendingStudentLeaves  = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student').length;
 
   if (loading) return <Spinner />;
 
   return (
     <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <StatCard icon={Users}        label="Teachers"        value={teachers.length} color="bg-blue-500"    sub="Active staff" />
         <StatCard icon={BookOpen}     label="Classes"         value={totalClasses}         color="bg-indigo-500"  sub="All sections" />
         <StatCard icon={ClipboardList} label="Active Tasks"  value={activeTasks}           color="bg-emerald-500" sub={`${overdueTasks} overdue`} alert={overdueTasks > 0} onClick={() => navigate('/tasks')} />
-        <StatCard icon={CalendarOff}  label="Pending Leaves"  value={pendingLeaves}        color="bg-orange-500"  sub="Awaiting approval" onClick={() => navigate('/leave')} />
+        <StatCard icon={CalendarOff}  label="Pending Teacher Leaves"  value={pendingTeacherLeaves}        color="bg-orange-500"  sub="Awaiting approval" onClick={() => navigate('/leave')} />
+        <StatCard icon={CalendarOff}  label="Pending Student Leaves"  value={pendingStudentLeaves}        color="bg-purple-500"  sub="Awaiting approval" onClick={() => navigate('/leave')} />
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -184,8 +186,9 @@ function CoordinatorDashboard() {
     });
   }, []);
 
-  const pendingLeaves      = leaves.filter(l => l.status === 'pending');
-  const approvedNoProxy    = leaves.filter(l => l.status === 'approved' && !proxies.some(p => p.leaveApplicationId === l.id));
+  const pendingTeacherLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student');
+  const pendingStudentLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student');
+  const approvedNoProxy    = leaves.filter(l => l.status === 'approved' && l.leaveOwnerType !== 'student' && !proxies.some(p => p.leaveApplicationId === l.id));
   const pendingProxies     = proxies.filter(p => p.status === 'pending');
   const overdueTasks       = assignments.filter(a => a.status === 'overdue').length;
 
@@ -193,8 +196,9 @@ function CoordinatorDashboard() {
 
   return (
     <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={CalendarOff}  label="Pending Leaves"       value={pendingLeaves.length}   color="bg-orange-500"  sub="Awaiting approval"    onClick={() => navigate('/leave')} />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <StatCard icon={CalendarOff}  label="Pending Teacher Leaves" value={pendingTeacherLeaves.length}  color="bg-orange-500"  sub="Awaiting approval"    onClick={() => navigate('/leave')} />
+        <StatCard icon={CalendarOff}  label="Pending Student Leaves" value={pendingStudentLeaves.length}  color="bg-purple-500"  sub="Awaiting approval"    onClick={() => navigate('/leave')} />
         <StatCard icon={UserCheck}    label="Needs Proxy"          value={approvedNoProxy.length} color="bg-red-500"     sub="Approved, no cover"  alert={approvedNoProxy.length > 0} onClick={() => navigate('/leave')} />
         <StatCard icon={RefreshCw}    label="Pending Proxies"      value={pendingProxies.length}  color="bg-indigo-500"  sub="Awaiting principal"   onClick={() => navigate('/leave')} />
         <StatCard icon={AlertCircle}  label="Overdue Tasks"        value={overdueTasks}           color="bg-emerald-500" sub="Need attention"       alert={overdueTasks > 0} onClick={() => navigate('/tasks')} />
@@ -283,7 +287,8 @@ function PrincipalDashboard() {
 
   useEffect(() => { load(); }, []);
 
-  const pendingLeaves   = leaves.filter(l => l.status === 'pending');
+  const pendingTeacherLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student');
+  const pendingStudentLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student');
   const pendingProxies  = proxies.filter(p => p.status === 'pending');
   const overdueTasks    = assignments.filter(a => a.status === 'overdue').length;
   const completedTasks  = assignments.filter(a => a.status === 'completed').length;
@@ -306,8 +311,9 @@ function PrincipalDashboard() {
 
   return (
     <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={CalendarOff}  label="Pending Leaves"   value={pendingLeaves.length}   color="bg-orange-500" sub="Require approval"   alert={pendingLeaves.length > 0}  onClick={() => navigate('/leave')} />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <StatCard icon={CalendarOff}  label="Pending Teacher Leaves" value={pendingTeacherLeaves.length}  color="bg-orange-500" sub="Require approval"   alert={pendingTeacherLeaves.length > 0}  onClick={() => navigate('/leave')} />
+        <StatCard icon={CalendarOff}  label="Pending Student Leaves" value={pendingStudentLeaves.length}  color="bg-purple-500" sub="Require approval"   alert={pendingStudentLeaves.length > 0}  onClick={() => navigate('/leave')} />
         <StatCard icon={ShieldCheck}  label="Pending Proxies"  value={pendingProxies.length}  color="bg-indigo-500" sub="Require approval"   alert={pendingProxies.length > 0} onClick={() => navigate('/leave')} />
         <StatCard icon={AlertCircle}  label="Overdue Tasks"    value={overdueTasks}           color="bg-red-500"    sub="Needs attention"    alert={overdueTasks > 0}          onClick={() => navigate('/tasks')} />
         <StatCard icon={CheckCircle2} label="Completed Tasks"  value={completedTasks}         color="bg-green-500"  sub="This period" />

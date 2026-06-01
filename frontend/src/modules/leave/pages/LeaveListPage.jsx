@@ -34,7 +34,10 @@ export default function LeaveListPage() {
   const canApprove = canApproveLeave;
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [activeTab, setActiveTab] = useState('teacher'); // 'teacher' or 'student'
   const [filterStatus, setFilterStatus] = useState('all');
+  
   const [actionId, setActionId] = useState(null);
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -83,11 +86,20 @@ export default function LeaveListPage() {
     setActionId(null);
   };
 
-  const filtered = filterStatus === 'all'
-    ? leaves
-    : leaves.filter((l) => l.status === filterStatus);
+  // Split leaves by type
+  const teacherLeaves = leaves.filter(l => l.leaveOwnerType !== 'student');
+  const studentLeaves = leaves.filter(l => l.leaveOwnerType === 'student');
 
-  const pendingCount = leaves.filter((l) => l.status === 'pending').length;
+  const currentTypeLeaves = canApprove ? (activeTab === 'teacher' ? teacherLeaves : studentLeaves) : teacherLeaves;
+
+  const filtered = filterStatus === 'all'
+    ? currentTypeLeaves
+    : currentTypeLeaves.filter((l) => l.status === filterStatus);
+
+  const pendingCount = currentTypeLeaves.filter((l) => l.status === 'pending').length;
+  
+  const totalPendingTeacher = teacherLeaves.filter(l => l.status === 'pending').length;
+  const totalPendingStudent = studentLeaves.filter(l => l.status === 'pending').length;
 
   return (
     <div>
@@ -95,21 +107,59 @@ export default function LeaveListPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Leave Management</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {canApprove ? 'Review and manage teacher leave applications' : 'Your leave applications'}
+            {canApprove ? 'Review and manage leave applications' : 'Your leave applications'}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/leave/apply')}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
-        >
-          <Plus size={16} /> Apply for Leave
-        </button>
+        {!canApprove && (
+          <button
+            onClick={() => navigate('/leave/apply')}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            <Plus size={16} /> Apply for Leave
+          </button>
+        )}
       </div>
 
-      {canApprove && pendingCount > 0 && (
+      {canApprove && (totalPendingTeacher > 0 || totalPendingStudent > 0) && (
         <div className="mb-4 flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
           <Clock size={16} className="shrink-0" />
-          <span><strong>{pendingCount}</strong> leave application{pendingCount > 1 ? 's' : ''} awaiting your approval.</span>
+          <span>
+            <strong>{totalPendingTeacher + totalPendingStudent}</strong> leave application{(totalPendingTeacher + totalPendingStudent) > 1 ? 's' : ''} awaiting your approval
+            {totalPendingStudent > 0 && ` (${totalPendingTeacher} Teacher, ${totalPendingStudent} Student)`}.
+          </span>
+        </div>
+      )}
+
+      {canApprove && (
+        <div className="flex gap-4 mb-4 border-b border-gray-200">
+          <button
+            onClick={() => { setActiveTab('teacher'); setFilterStatus('all'); }}
+            className={`pb-2.5 px-2 text-sm font-medium transition-colors relative ${
+              activeTab === 'teacher' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Teacher Leaves
+            {totalPendingTeacher > 0 && (
+              <span className="ml-2 bg-yellow-100 text-yellow-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                {totalPendingTeacher}
+              </span>
+            )}
+            {activeTab === 'teacher' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-t-full" />}
+          </button>
+          <button
+            onClick={() => { setActiveTab('student'); setFilterStatus('all'); }}
+            className={`pb-2.5 px-2 text-sm font-medium transition-colors relative ${
+              activeTab === 'student' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Student Leaves
+            {totalPendingStudent > 0 && (
+              <span className="ml-2 bg-yellow-100 text-yellow-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                {totalPendingStudent}
+              </span>
+            )}
+            {activeTab === 'student' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 rounded-t-full" />}
+          </button>
         </div>
       )}
 
@@ -147,33 +197,54 @@ export default function LeaveListPage() {
         ) : (
           <div className="divide-y">
             {filtered.map((leave) => {
-              const teacherName = leave.teacherName || leave.teacher?.full_name || leave.teacher?.name || 'Unknown Teacher';
+              const isStudent = leave.leaveOwnerType === 'student';
+              const applicantName = isStudent 
+                ? (leave.studentName || leave.student?.full_name || leave.student?.name || 'Unknown Student')
+                : (leave.teacherName || leave.teacher?.full_name || leave.teacher?.name || 'Unknown Teacher');
+                
+              const applicantCode = isStudent
+                ? (leave.student?.studentId || 'N/A')
+                : (leave.teacher?.id || 'N/A');
+
               const submittedAt = leave.submittedAt?.toDate
                 ? leave.submittedAt.toDate()
                 : leave.submittedAt ? new Date(leave.submittedAt) : null;
 
               return (
                 <div key={leave.id} className="px-5 py-4 flex items-start gap-4">
-                  <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-semibold shrink-0">
-                    {teacherName[0]}
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${isStudent ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                    {applicantName[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-medium text-gray-900 text-sm">
-                        {teacherName}
+                        {applicantName}
                       </span>
+                      
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${isStudent ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
+                        {isStudent ? 'Student Leave' : 'Teacher Leave'}
+                      </span>
+                      
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${LEAVE_TYPE_CLS[leave.leaveType] || 'bg-gray-50 text-gray-600'}`}>
                         {leave.leaveType}
                       </span>
+                      
                       {leave.leaveDuration && (
                         <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded uppercase tracking-wider">
                           {leave.leaveDuration === 'HALF_DAY' ? 'Half Day' : 'Full Day'}
-                          {leave.deductedLeaves && ` (${Number(leave.deductedLeaves)})`}
+                          {!isStudent && leave.deductedLeaves && ` (${Number(leave.deductedLeaves)})`}
                         </span>
                       )}
                     </div>
+                    
+                    {isStudent && leave.student?.className && (
+                      <div className="text-xs text-gray-500 mb-1">
+                        Class: <span className="font-medium">{leave.student.className} {leave.student.section}</span> · ID: {applicantCode}
+                      </div>
+                    )}
+                    
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {leave.startDate} → {leave.endDate}
+                      {leave.startDate} {leave.startDate !== leave.endDate ? `→ ${leave.endDate}` : ''}
                       {submittedAt && (
                         <span className="ml-2 text-gray-400">
                           · Applied {submittedAt.toLocaleDateString()}
@@ -186,7 +257,7 @@ export default function LeaveListPage() {
                       </div>
                     )}
                     {leave.remarks && (
-                      <div className={`text-xs mt-1 ${leave.status === 'approved' ? 'text-green-700' : leave.status === 'rejected' ? 'text-red-500' : 'text-gray-500'}`}>
+                      <div className={`text-xs mt-1 font-medium ${leave.status === 'approved' ? 'text-green-700' : leave.status === 'rejected' ? 'text-red-500' : 'text-gray-500'}`}>
                         Remark: {leave.remarks}
                       </div>
                     )}
@@ -211,15 +282,15 @@ export default function LeaveListPage() {
                         </button>
                       </>
                     )}
-                    {leave.status === 'approved' && canApprove && !leave.proxyAssigned && (
+                    {!isStudent && leave.status === 'approved' && canApprove && !leave.proxyAssigned && (
                       <button
                         onClick={() => navigate(`/leave/${leave.id}/proxy`)}
-                        className="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded"
+                        className="text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded"
                       >
                         Assign Proxy
                       </button>
                     )}
-                    {leave.proxyAssigned && (
+                    {!isStudent && leave.proxyAssigned && (
                       <button
                         onClick={() => navigate(`/leave/${leave.id}/proxy`)}
                         className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded"
@@ -234,6 +305,8 @@ export default function LeaveListPage() {
           </div>
         )}
       </div>
+      
+      {/* Reject Modal */}
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-6 max-w-sm w-full mx-4">
@@ -266,6 +339,8 @@ export default function LeaveListPage() {
           </div>
         </div>
       )}
+      
+      {/* Approve Modal */}
       {approveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-6 max-w-sm w-full mx-4">

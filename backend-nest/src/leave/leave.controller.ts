@@ -69,11 +69,11 @@ export class LeaveController {
   findOne(@Param('id') id: string) { return this.svc.findOne(id); }
 
   @Post()
-  @UseGuards(RolesGuard) @MinRole(Role.TEACHER)
-  @ApiOperation({ summary: 'Submit leave application (teacher+)' })
+  @UseGuards(RolesGuard) @Roles(Role.TEACHER, Role.STUDENT)
+  @ApiOperation({ summary: 'Submit leave application (teacher or student)' })
   submit(@Body() dto: SubmitLeaveDto, @CurrentUser() user: any) {
-    if (user.role !== Role.TEACHER) {
-      throw new ForbiddenException('Only teachers can apply leave');
+    if (user.role !== Role.TEACHER && user.role !== Role.STUDENT) {
+      throw new ForbiddenException('Only teachers and students can apply for leave');
     }
     return this.svc.submit(dto, user);
   }

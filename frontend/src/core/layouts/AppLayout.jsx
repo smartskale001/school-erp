@@ -142,6 +142,7 @@ export default function AppLayout({ children }) {
                 { label: "Homework", icon: BookOpen, path: "/student/homework" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
                 { label: "Syllabus", icon: FileText, path: "/student/syllabus" },
+                { label: "Leave", icon: CalendarOff, path: "/student/leave" },
               ],
             }
           ] : navSections).map((section) => {

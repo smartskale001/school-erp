@@ -40,6 +40,12 @@ export class LeaveApplicationEntity {
   @Column({ name: 'teacher_id', length: 50, nullable: true })
   teacherId: string;
 
+  @Column({ name: 'student_id', length: 10, nullable: true })
+  studentId: string;
+
+  @Column({ name: 'leave_owner_type', length: 10, default: 'teacher' })
+  leaveOwnerType: string;
+
   @Column({ name: 'leave_type', length: 20, default: 'other' })
   leaveType: string;
 

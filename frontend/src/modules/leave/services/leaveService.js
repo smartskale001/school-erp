@@ -16,6 +16,10 @@ export async function getLeaveApplicationsForTeacher() {
   return apiRequest(API_ENDPOINTS.leave.my);
 }
 
+export async function getLeaveApplicationsForStudent() {
+  return apiRequest(API_ENDPOINTS.leave.my);
+}
+
 export async function getLeaveStats() {
   return apiRequest('/leave/stats');
 }
