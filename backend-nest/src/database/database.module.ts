@@ -21,6 +21,8 @@ import { AcademicYearEntity } from './entities/academic-year.entity';
 import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
 import { FeedbackEntity } from './entities/feedback.entity';
 import { StudentEntity } from './entities/student.entity';
+import { CircularEntity } from './entities/circular.entity';
+import { MailboxEntity } from './entities/mailbox.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -43,6 +45,8 @@ const ALL_ENTITIES = [
   TeacherLeaveBalanceEntity,
   FeedbackEntity,
   StudentEntity,
+  CircularEntity,
+  MailboxEntity,
 ];
 
 @Module({

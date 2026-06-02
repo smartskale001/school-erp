@@ -103,8 +103,9 @@ function AdminDashboard() {
   const activeTasks    = assignments.filter(a => !['cancelled', 'completed'].includes(a.status)).length;
   const overdueTasks   = assignments.filter(a => a.status === 'overdue').length;
   const completedTasks = assignments.filter(a => a.status === 'completed').length;
-  const pendingTeacherLeaves  = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student').length;
-  const pendingStudentLeaves  = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student').length;
+  const pendingLeaves  = leaves.filter(l => l.status === 'pending');
+  const pendingTeacherLeaves  = pendingLeaves.filter(l => l.leaveOwnerType !== 'student').length;
+  const pendingStudentLeaves  = pendingLeaves.filter(l => l.leaveOwnerType === 'student').length;
 
   if (loading) return <Spinner />;
 
@@ -151,15 +152,23 @@ function AdminDashboard() {
 
         <SectionCard title="Leave Applications" linkTo="/leave" linkLabel="View all" navigate={navigate}>
           {leaves.length === 0 ? <Empty text="No leave applications" /> :
-            leaves.slice(0, 6).map(l => (
-              <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
-                  <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
+            leaves.slice(0, 6).map(l => {
+              const isStudent = l.leaveOwnerType === 'student';
+              return (
+                <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                      {isStudent ? (l.studentName || l.student?.name || 'Student') : <TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} />}
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isStudent ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                        {isStudent ? 'Student Leave' : 'Teacher Leave'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
+                  </div>
+                  <StatusBadge status={l.status} />
                 </div>
-                <StatusBadge status={l.status} />
-              </div>
-            ))
+              );
+            })
           }
         </SectionCard>
       </div>
@@ -186,8 +195,9 @@ function CoordinatorDashboard() {
     });
   }, []);
 
-  const pendingTeacherLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student');
-  const pendingStudentLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student');
+  const pendingLeaves      = leaves.filter(l => l.status === 'pending');
+  const pendingTeacherLeaves = pendingLeaves.filter(l => l.leaveOwnerType !== 'student');
+  const pendingStudentLeaves = pendingLeaves.filter(l => l.leaveOwnerType === 'student');
   const approvedNoProxy    = leaves.filter(l => l.status === 'approved' && l.leaveOwnerType !== 'student' && !proxies.some(p => p.leaveApplicationId === l.id));
   const pendingProxies     = proxies.filter(p => p.status === 'pending');
   const overdueTasks       = assignments.filter(a => a.status === 'overdue').length;
@@ -230,15 +240,23 @@ function CoordinatorDashboard() {
         <SectionCard title="Pending Leave Requests" linkTo="/leave" linkLabel="View all" navigate={navigate}>
           {pendingLeaves.length === 0
             ? <Empty text="No pending leave requests" />
-            : pendingLeaves.slice(0, 6).map(l => (
-              <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
-                  <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
-                </div>
-                <StatusBadge status={l.status} />
-              </div>
-            ))
+            : pendingLeaves.slice(0, 6).map(l => {
+                const isStudent = l.leaveOwnerType === 'student';
+                return (
+                  <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        {isStudent ? (l.studentName || l.student?.name || 'Student') : <TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} />}
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isStudent ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                          {isStudent ? 'Student Leave' : 'Teacher Leave'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
+                    </div>
+                    <StatusBadge status={l.status} />
+                  </div>
+                );
+              })
           }
         </SectionCard>
       </div>
@@ -287,8 +305,9 @@ function PrincipalDashboard() {
 
   useEffect(() => { load(); }, []);
 
-  const pendingTeacherLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType !== 'student');
-  const pendingStudentLeaves = leaves.filter(l => l.status === 'pending' && l.leaveOwnerType === 'student');
+  const pendingLeaves   = leaves.filter(l => l.status === 'pending');
+  const pendingTeacherLeaves = pendingLeaves.filter(l => l.leaveOwnerType !== 'student');
+  const pendingStudentLeaves = pendingLeaves.filter(l => l.leaveOwnerType === 'student');
   const pendingProxies  = proxies.filter(p => p.status === 'pending');
   const overdueTasks    = assignments.filter(a => a.status === 'overdue').length;
   const completedTasks  = assignments.filter(a => a.status === 'completed').length;
@@ -324,29 +343,37 @@ function PrincipalDashboard() {
         <SectionCard title="Leave Awaiting Approval" linkTo="/leave" linkLabel="View all" navigate={navigate}>
           {pendingLeaves.length === 0
             ? <div className="px-5 py-8 text-center text-sm text-green-600 font-medium">No pending leave requests ✓</div>
-            : pendingLeaves.slice(0, 5).map(l => (
-              <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-gray-900"><TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} /></div>
-                  <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
-                </div>
-                <div className="flex gap-1.5">
-                  <button
-                    disabled={actionId === l.id}
-                    onClick={() => handleApproveLeave(l.id)}
-                    className="text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-lg hover:bg-green-100 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => navigate('/leave')}
-                    className="text-xs bg-gray-50 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-100"
-                  >
-                    Review
-                  </button>
-                </div>
-              </div>
-            ))
+            : pendingLeaves.slice(0, 5).map(l => {
+                const isStudent = l.leaveOwnerType === 'student';
+                return (
+                  <div key={l.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        {isStudent ? (l.studentName || l.student?.name || 'Student') : <TeacherName id={l.teacherId} name={l.teacherName} teachers={teachers} />}
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isStudent ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                          {isStudent ? 'Student Leave' : 'Teacher Leave'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 capitalize">{l.leaveType} · {l.startDate} – {l.endDate}</div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        disabled={actionId === l.id}
+                        onClick={() => handleApproveLeave(l.id)}
+                        className="text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-lg hover:bg-green-100 disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => navigate('/leave')}
+                        className="text-xs bg-gray-50 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-100"
+                      >
+                        Review
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
           }
         </SectionCard>
 

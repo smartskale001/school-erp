@@ -19,6 +19,8 @@ import { AcademicYearsModule } from './academic-years/academic-years.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { EmailModule } from './email/email.module';
+import { CircularsModule } from './circulars/circular.module';
+import { MailboxModule } from './mailbox/mailbox.module';
 import { AppController } from './app.controller';
 import { validate } from './config/env.validation';
 
@@ -44,6 +46,8 @@ import { validate } from './config/env.validation';
     FeedbackModule,
     FirebaseModule,
     EmailModule,
+    CircularsModule,
+    MailboxModule,
   ],
   controllers: [AppController],
 })

@@ -56,9 +56,11 @@ const navSections = [
   {
     label: "OPERATIONS",
     items: [
-      { label: "Tasks", icon: ClipboardList, path: "/tasks" },
-      { label: "Leave", icon: CalendarOff,   path: "/leave" },
-      { label: "Feedback", icon: MessageSquare, path: "/feedback", roles: ["principal", "teacher"] },
+      { label: "Tasks",      icon: ClipboardList,  path: "/tasks" },
+      { label: "Leave",      icon: CalendarOff,    path: "/leave" },
+      { label: "Circulars",  icon: Megaphone,      path: "/circulars", roles: ["admin", "principal"] },
+      { label: "Mailbox",    icon: Mail,           path: "/mailbox",   roles: ["admin", "principal"] },
+      { label: "Feedback",   icon: MessageSquare,  path: "/feedback",  roles: ["principal", "teacher"] },
     ],
   },
   {
@@ -142,6 +144,7 @@ export default function AppLayout({ children }) {
                 { label: "Homework", icon: BookOpen, path: "/student/homework" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
                 { label: "Syllabus", icon: FileText, path: "/student/syllabus" },
+                { label: "Performance", icon: BarChart3, path: "/student/performance" },
                 { label: "Leave", icon: CalendarOff, path: "/student/leave" },
               ],
             }

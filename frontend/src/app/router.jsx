@@ -21,6 +21,7 @@ const StudentAttendancePage  = React.lazy(() => import('../modules/student/pages
 const StudentHomeworkPage    = React.lazy(() => import('../modules/student/pages/StudentHomeworkPage'));
 const StudentAchievementsPage = React.lazy(() => import('../modules/student/pages/StudentAchievementsPage'));
 const StudentSyllabusPage    = React.lazy(() => import('../modules/student/pages/StudentSyllabusPage'));
+const StudentPerformancePage = React.lazy(() => import('../modules/student/pages/StudentPerformancePage'));
 const StudentLeavePage       = React.lazy(() => import('../modules/student/pages/StudentLeavePage'));
 const TimetablePage          = React.lazy(() => import('../modules/timetable/pages/TimetablePage'));
 const OrganizationSettingsPage = React.lazy(() => import('../modules/timetable/pages/OrganizationSettingsPage'));
@@ -39,6 +40,8 @@ const ProfilePage            = React.lazy(() => import('../modules/profile/pages
 const AcademicYearsPage      = React.lazy(() => import('../modules/settings/pages/AcademicYearsPage'));
 const PrincipalFeedbackPage  = React.lazy(() => import('../modules/feedback/pages/PrincipalFeedbackPage'));
 const TeacherFeedbackPage    = React.lazy(() => import('../modules/feedback/pages/TeacherFeedbackPage'));
+const CircularManagementPage = React.lazy(() => import('../modules/circulars/pages/CircularManagementPage'));
+const MailboxManagementPage  = React.lazy(() => import('../modules/mailbox/pages/MailboxManagementPage'));
 
 // Shared route-level loading spinner
 function PageLoader() {
@@ -162,9 +165,22 @@ export default function AppRouter() {
               element={role === 'student' ? <StudentSyllabusPage /> : <Navigate to="/" replace />}
             />
             <Route
+              path="/student/performance"
+              element={role === 'student' ? <StudentPerformancePage /> : <Navigate to="/" replace />}
+            />
+            <Route
               path="/student/leave"
               element={role === 'student' ? <StudentLeavePage /> : <Navigate to="/" replace />}
             />
+
+            {/* Reports */}
+            <Route path="/reports" element={['admin', 'principal', 'coordinator'].includes(role) ? <ReportsPage /> : <Navigate to="/" replace />} />
+
+            {/* Circulars Management */}
+            <Route path="/circulars" element={['admin', 'principal'].includes(role) ? <CircularManagementPage /> : <Navigate to="/" replace />} />
+
+            {/* Mailbox Management */}
+            <Route path="/mailbox" element={['admin', 'principal'].includes(role) ? <MailboxManagementPage /> : <Navigate to="/" replace />} />
 
             {/* Profile — all roles */}
             <Route path="/profile" element={<ProfilePage />} />

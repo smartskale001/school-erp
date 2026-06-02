@@ -27,6 +27,8 @@ export class NotificationsService {
       feedback: '/feedback',
       proxy: '/leave',
       timetable: '/timetable',
+      circular: '/student/circulars',
+      mailbox: '/student/mailbox',
     };
 
     // Trigger FCM
