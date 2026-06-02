@@ -38,6 +38,7 @@ import {
   saveTimetableToDb,
   loadTimetableFromDb,
   deleteTimetableFromDb,
+  getStudentTimetable,
 } from "@/modules/timetable/services/timetableService";
 import { useClasses } from "@/core/context/ClassesContext";
 import { useAuth } from "@/core/context/AuthContext";
@@ -69,6 +70,7 @@ function normalizeGridsForPeriods(savedGrids, periods) {
 export default function TimetablePage() {
   const { classOptions } = useClasses();
   const { isTeacher, teacherId, user } = useAuth();
+  const isStudent = user?.role === 'student';
   const { subjects } = useSubjects();
   const { teachers } = useTeachers();
 
@@ -116,26 +118,37 @@ export default function TimetablePage() {
     async function init() {
       setDbLoading(true);
       try {
-        const dbData = await loadTimetableFromDb();
-        if (dbData) {
-          setGridsByClass(normalizeGridsForPeriods(dbData, periods));
+        if (isStudent) {
+          const studentTt = await getStudentTimetable();
+          if (studentTt && studentTt.grids && studentTt.classId) {
+             setGridsByClass(normalizeGridsForPeriods(studentTt.grids, periods));
+             setSelectedClass(studentTt.classId);
+             setView("class");
+          }
         } else {
-          const local = localStorage.getItem("erp_timetable");
-          if (local) {
-            setGridsByClass(normalizeGridsForPeriods(JSON.parse(local), periods));
+          const dbData = await loadTimetableFromDb();
+          if (dbData) {
+            setGridsByClass(normalizeGridsForPeriods(dbData, periods));
+          } else {
+            const local = localStorage.getItem("erp_timetable");
+            if (local) {
+              setGridsByClass(normalizeGridsForPeriods(JSON.parse(local), periods));
+            }
           }
         }
       } catch {
-        try {
-          const local = localStorage.getItem("erp_timetable");
-          if (local) {
-            setGridsByClass(normalizeGridsForPeriods(JSON.parse(local), periods));
-          }
-        } catch {}
+        if (!isStudent) {
+          try {
+            const local = localStorage.getItem("erp_timetable");
+            if (local) {
+              setGridsByClass(normalizeGridsForPeriods(JSON.parse(local), periods));
+            }
+          } catch {}
+        }
       }
       setDbLoading(false);
 
-      if (isTeacher) {
+      if (isTeacher || isStudent) {
         setHasLoadedPrefs(true);
         return;
       }
@@ -169,7 +182,7 @@ export default function TimetablePage() {
   }, [selectedClass, view, hasLoadedPrefs]);
 
   useEffect(() => {
-    if (!selectedClass || isTeacher) return;
+    if (!selectedClass || isTeacher || isStudent) return;
     async function loadDraftOrPub() {
       try {
         const res = await apiRequest(`/timetable/${selectedClass}`);
@@ -197,7 +210,7 @@ export default function TimetablePage() {
 
   // Intercept in-app navigation when dirty
   useEffect(() => {
-    if (isTeacher || !isDirty) return;
+    if (isTeacher || isStudent || !isDirty) return;
     const handleClick = (e) => {
       const anchor = e.target.closest("a");
       if (!anchor) return;
@@ -233,7 +246,7 @@ export default function TimetablePage() {
     subjectColorMap[subjectName] || { bg: "#F1F5F9", border: "#94A3B8", text: "#334155" };
 
   const handleDropAssign = useCallback((pi, di, payload) => {
-    if (isTeacher || view !== "class" || !selectedClass) return;
+    if (isTeacher || isStudent || view !== "class" || !selectedClass) return;
     if (!payload?.subject || !payload?.teacher) return;
 
     // Use the full grid (with fallback) so drops work on uninitialized classes
@@ -280,17 +293,17 @@ export default function TimetablePage() {
       next[pi][di] = { type: "filled", subject: payload.subject, teacher: payload.teacher, room: "101" };
       return { ...prev, [selectedClass]: next };
     });
-  }, [isTeacher, view, selectedClass, gridsByClass, periods]);
+  }, [isTeacher, isStudent, view, selectedClass, gridsByClass, periods]);
 
   const handleCellClick = useCallback((pi, di) => {
-    if (isTeacher || view === "teacher" || !selectedClass) return;
+    if (isTeacher || isStudent || view === "teacher" || !selectedClass) return;
     const currentGrid = gridsByClass[selectedClass] || getInitialGrid({ periods, days, isHolidayDay });
     const cell = currentGrid[pi]?.[di];
     if (!cell || cell.type === "break" || cell.type === "holiday") return;
     setDialog({ open: true, pi, di });
     setAssignSubject(cell?.subject || "");
     setAssignTeacher(cell?.teacher || "");
-  }, [isTeacher, view, selectedClass, gridsByClass, periods]);
+  }, [isTeacher, isStudent, view, selectedClass, gridsByClass, periods]);
 
   const teacherOptions = React.useMemo(
     () => teachers.map((t) => ({ value: t.name, label: t.name })),
@@ -495,13 +508,13 @@ export default function TimetablePage() {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      {isDirty && !isTeacher && (
+      {isDirty && !isTeacher && !isStudent && (
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 rounded-t-xl">
           <AlertCircle size={15} className="shrink-0" />
           <span>You have unsaved changes in the current view.</span>
         </div>
       )}
-      {draftExists && !isTeacher && (
+      {draftExists && !isTeacher && !isStudent && (
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 rounded-t-xl mt-1">
           <AlertCircle size={15} className="shrink-0" />
           <span>You have unpublished changes for this class in draft. Click <strong>Publish Timetable</strong> to make them live.</span>
@@ -513,6 +526,10 @@ export default function TimetablePage() {
         {isTeacher ? (
           <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">
             {myTeacherRecord?.name || user?.displayName || "My Timetable"}
+          </div>
+        ) : isStudent ? (
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium">
+            {selectedClass ? `Class: ${selectedClass}` : "My Timetable"}
           </div>
         ) : view === "class" ? (
           <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -538,7 +555,7 @@ export default function TimetablePage() {
           </Select>
         )}
 
-        {!isTeacher && (
+        {!isTeacher && !isStudent && (
           <div className="flex gap-0.5 ml-2">
             <button
               className={view === "class" ? "bg-blue-600 text-white rounded-lg px-3 py-1.5 text-sm" : "bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"}
@@ -555,7 +572,7 @@ export default function TimetablePage() {
           </div>
         )}
 
-        {!isTeacher && user?.role !== 'principal' && (
+        {!isTeacher && !isStudent && user?.role !== 'principal' && (
           <div className="ml-auto flex items-center gap-2">
             <button
               className="border border-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -603,7 +620,7 @@ export default function TimetablePage() {
       {!dbLoading && (
         <div className={`flex gap-4 ${view === "class" ? (!isClassSelected ? "opacity-60 pointer-events-none" : "") : (!isTeacherSelected ? "opacity-60 pointer-events-none" : "")}`}>
           <div className="flex-1 overflow-x-auto">
-            {view === "class" && isClassSelected && (missingTeacherSubjects.length > 0 || unassignedCount > 0) && (
+            {view === "class" && isClassSelected && !isStudent && (missingTeacherSubjects.length > 0 || unassignedCount > 0) && (
               <div className="mx-4 mt-4 mb-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {missingTeacherSubjects.length > 0 && (
                   <div>
@@ -658,9 +675,9 @@ export default function TimetablePage() {
                         return (
                           <td
                             key={di}
-                            className={`bg-red-50 border-red-300 border h-20 w-36 align-top p-1.5 relative ${isTeacher ? "cursor-default" : "cursor-pointer hover:bg-red-100"}`}
-                            onClick={() => !isTeacher && handleCellClick(pi, di)}
-                            {...(!isTeacher ? makeDragDropProps(pi, di) : {})}
+                            className={`bg-red-50 border-red-300 border h-20 w-36 align-top p-1.5 relative ${isTeacher || isStudent ? "cursor-default" : "cursor-pointer hover:bg-red-100"}`}
+                            onClick={() => !isTeacher && !isStudent && handleCellClick(pi, di)}
+                            {...(!isTeacher && !isStudent ? makeDragDropProps(pi, di) : {})}
                           >
                             <div className="absolute top-1 right-1"><AlertTriangle size={12} className="text-red-400" /></div>
                             <div className="text-xs font-semibold text-red-700">{cell.subject}</div>
@@ -673,9 +690,9 @@ export default function TimetablePage() {
                         return (
                           <td
                             key={di}
-                            className={`bg-yellow-50 border-yellow-300 border h-20 w-36 align-top p-1.5 relative ${isTeacher ? "cursor-default" : "cursor-pointer hover:bg-yellow-100"}`}
-                            onClick={() => !isTeacher && handleCellClick(pi, di)}
-                            {...(!isTeacher ? makeDragDropProps(pi, di) : {})}
+                            className={`bg-yellow-50 border-yellow-300 border h-20 w-36 align-top p-1.5 relative ${isTeacher || isStudent ? "cursor-default" : "cursor-pointer hover:bg-yellow-100"}`}
+                            onClick={() => !isTeacher && !isStudent && handleCellClick(pi, di)}
+                            {...(!isTeacher && !isStudent ? makeDragDropProps(pi, di) : {})}
                           >
                             <div className="absolute top-1 right-1 bg-yellow-100 rounded px-1 text-xs text-yellow-700">Proxy</div>
                             <div className="rounded-lg px-2 py-1" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, color: colors.text }}>
@@ -690,9 +707,9 @@ export default function TimetablePage() {
                         return (
                           <td
                             key={di}
-                            className={`bg-white border border-gray-100 h-20 w-36 align-top p-1.5 relative ${isTeacher ? "cursor-default" : "cursor-pointer hover:bg-blue-50 hover:border-blue-200"}`}
-                            onClick={() => !isTeacher && handleCellClick(pi, di)}
-                            {...(!isTeacher ? makeDragDropProps(pi, di) : {})}
+                            className={`bg-white border border-gray-100 h-20 w-36 align-top p-1.5 relative ${isTeacher || isStudent ? "cursor-default" : "cursor-pointer hover:bg-blue-50 hover:border-blue-200"}`}
+                            onClick={() => !isTeacher && !isStudent && handleCellClick(pi, di)}
+                            {...(!isTeacher && !isStudent ? makeDragDropProps(pi, di) : {})}
                           >
                             <div className="rounded-lg px-2 py-1" style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}`, color: colors.text }}>
                               <div className="text-xs font-semibold">{cell.subject}</div>
@@ -708,11 +725,11 @@ export default function TimetablePage() {
                       return (
                         <td
                           key={di}
-                          className={`bg-white border border-gray-100 h-20 w-36 align-top p-1.5 relative ${isTeacher ? "cursor-default" : "cursor-pointer hover:bg-blue-50 hover:border-blue-200"}`}
-                          onClick={() => !isTeacher && handleCellClick(pi, di)}
-                          {...(!isTeacher ? makeDragDropProps(pi, di) : {})}
+                          className={`bg-white border border-gray-100 h-20 w-36 align-top p-1.5 relative ${isTeacher || isStudent ? "cursor-default" : "cursor-pointer hover:bg-blue-50 hover:border-blue-200"}`}
+                          onClick={() => !isTeacher && !isStudent && handleCellClick(pi, di)}
+                          {...(!isTeacher && !isStudent ? makeDragDropProps(pi, di) : {})}
                         >
-                          {!isTeacher && (
+                          {!isTeacher && !isStudent && (
                             <div className="flex items-center justify-center h-full w-full">
                               <Plus size={20} className="text-gray-300" />
                             </div>
@@ -726,7 +743,7 @@ export default function TimetablePage() {
             </table>
           </div>
 
-          {view === "class" && (
+          {view === "class" && !isStudent && (
             <div className="w-72 shrink-0">
               <div className="rounded-xl border border-gray-200 bg-white p-3 mr-4 mt-4">
                 <div className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Drag & Drop</div>
@@ -769,13 +786,15 @@ export default function TimetablePage() {
       )}
 
       {/* Summary Bar */}
-      <div className="flex gap-6 px-4 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl items-center">
-        <span className="text-sm text-gray-600">{filledCount}/{totalPeriods} periods filled</span>
-        <span className={`text-sm ${conflictCount === 0 ? "text-green-600" : "text-red-600"}`}>
-          Conflicts: {conflictCount === 0 ? "0" : <span className="bg-red-100 text-red-700 rounded px-2 py-0.5">{conflictCount}</span>}
-        </span>
-        <button className="border rounded-lg px-3 py-1.5 text-sm ml-auto text-gray-600 hover:bg-white">Export</button>
-      </div>
+      {!isStudent && (
+        <div className="flex gap-6 px-4 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl items-center">
+          <span className="text-sm text-gray-600">{filledCount}/{totalPeriods} periods filled</span>
+          <span className={`text-sm ${conflictCount === 0 ? "text-green-600" : "text-red-600"}`}>
+            Conflicts: {conflictCount === 0 ? "0" : <span className="bg-red-100 text-red-700 rounded px-2 py-0.5">{conflictCount}</span>}
+          </span>
+          <button className="border rounded-lg px-3 py-1.5 text-sm ml-auto text-gray-600 hover:bg-white">Export</button>
+        </div>
+      )}
 
       {/* Slot assignment Dialog */}
       <Dialog open={dialog.open} onOpenChange={(open) => setDialog((prev) => ({ ...prev, open }))}>

@@ -9,6 +9,10 @@ export function fetchTimetableList() {
   return apiRequest(API_ENDPOINTS.timetable.list);
 }
 
+export function getStudentTimetable() {
+  return apiRequest('/timetable/student/me');
+}
+
 export async function saveTimetableToDb(grids, { effectiveFrom, effectiveTo }) {
   return apiRequest(API_ENDPOINTS.timetable.publish, {
     method: 'POST',

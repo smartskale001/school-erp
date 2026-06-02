@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { TimetableEntity } from '../database/entities/timetable.entity';
 import { TimetableSettingsEntity } from '../database/entities/timetable-settings.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 import { SaveTimetableDto, SaveTimetableSettingsDto } from './dto/timetable.dto';
 import { EmailService } from '../email/email.service';
 import { AcademicYearsService } from '../academic-years/academic-years.service';
@@ -30,6 +31,8 @@ export class TimetableService {
     private teacherRepo: Repository<TeacherEntity>,
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
+    @InjectRepository(StudentEntity)
+    private studentRepo: Repository<StudentEntity>,
     private emailService: EmailService,
     private academicYearService: AcademicYearsService,
     private notificationsService: NotificationsService,
@@ -223,5 +226,26 @@ export class TimetableService {
       }
     }
     return { message: 'Timetable deleted successfully' };
+  }
+
+  async getStudentTimetable(user: any) {
+    const student = await this.studentRepo.findOne({ where: { id: user.id } });
+    if (!student) throw new NotFoundException('Student not found');
+    
+    const classId = `${student.className}-${student.section}`;
+    
+    // fetch the published timetable for this class
+    const pub = await this.repo.findOne({ where: { classId, status: 'published', schoolId: user.schoolId || 'school_001' } });
+    
+    // If not found by row, check the active document (backward compatibility for old schema)
+    if (!pub) {
+      const active = await this.getActive(user.schoolId);
+      if (active && active.grids && active.grids[classId]) {
+        return { grids: { [classId]: active.grids[classId] }, classId };
+      }
+      return null; // not found
+    }
+    
+    return pub;
   }
 }

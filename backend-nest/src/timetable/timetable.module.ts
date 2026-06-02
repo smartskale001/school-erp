@@ -8,10 +8,11 @@ import { TeacherEntity } from '../database/entities/teacher.entity';
 import { AcademicYearsModule } from '../academic-years/academic-years.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { UserEntity } from '../database/entities/user.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TimetableEntity, TimetableSettingsEntity, TeacherEntity, UserEntity]),
+    TypeOrmModule.forFeature([TimetableEntity, TimetableSettingsEntity, TeacherEntity, UserEntity, StudentEntity]),
     AcademicYearsModule,
     NotificationsModule,
   ],

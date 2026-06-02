@@ -74,6 +74,13 @@ export class TimetableController {
     return this.svc.getTeacherTimetable(user);
   }
 
+  @Get('student/me')
+  @UseGuards(RolesGuard) @Roles(Role.STUDENT)
+  @ApiOperation({ summary: 'Get timetable for logged in student' })
+  getStudentTimetable(@CurrentUser() user: any) {
+    return this.svc.getStudentTimetable(user);
+  }
+
   @Get(':classId')
   getByClass(@Param('classId') classId: string) {
     return this.svc.getByClass(classId);
