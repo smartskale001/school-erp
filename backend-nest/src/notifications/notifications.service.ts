@@ -29,6 +29,7 @@ export class NotificationsService {
       timetable: '/timetable',
       circular: '/student/circulars',
       mailbox: '/student/mailbox',
+      achievement: '/student/achievements',
     };
 
     // Trigger FCM

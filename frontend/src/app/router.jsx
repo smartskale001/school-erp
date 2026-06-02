@@ -42,6 +42,7 @@ const PrincipalFeedbackPage  = React.lazy(() => import('../modules/feedback/page
 const TeacherFeedbackPage    = React.lazy(() => import('../modules/feedback/pages/TeacherFeedbackPage'));
 const CircularManagementPage = React.lazy(() => import('../modules/circulars/pages/CircularManagementPage'));
 const MailboxManagementPage  = React.lazy(() => import('../modules/mailbox/pages/MailboxManagementPage'));
+const AchievementManagementPage = React.lazy(() => import('../modules/achievements/pages/AchievementManagementPage'));
 
 // Shared route-level loading spinner
 function PageLoader() {
@@ -181,6 +182,9 @@ export default function AppRouter() {
 
             {/* Mailbox Management */}
             <Route path="/mailbox" element={['admin', 'principal'].includes(role) ? <MailboxManagementPage /> : <Navigate to="/" replace />} />
+
+            {/* Achievement Management */}
+            <Route path="/achievements" element={['admin', 'principal'].includes(role) ? <AchievementManagementPage /> : <Navigate to="/" replace />} />
 
             {/* Profile — all roles */}
             <Route path="/profile" element={<ProfilePage />} />

@@ -21,6 +21,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { EmailModule } from './email/email.module';
 import { CircularsModule } from './circulars/circular.module';
 import { MailboxModule } from './mailbox/mailbox.module';
+import { AchievementsModule } from './achievements/achievements.module';
 import { AppController } from './app.controller';
 import { validate } from './config/env.validation';
 
@@ -48,6 +49,7 @@ import { validate } from './config/env.validation';
     EmailModule,
     CircularsModule,
     MailboxModule,
+    AchievementsModule,
   ],
   controllers: [AppController],
 })
