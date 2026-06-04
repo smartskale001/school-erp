@@ -22,6 +22,7 @@ import { EmailModule } from './email/email.module';
 import { CircularsModule } from './circulars/circular.module';
 import { MailboxModule } from './mailbox/mailbox.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { StudentsModule } from './students/students.module';
 import { AppController } from './app.controller';
 import { validate } from './config/env.validation';
 
@@ -50,6 +51,7 @@ import { validate } from './config/env.validation';
     CircularsModule,
     MailboxModule,
     AchievementsModule,
+    StudentsModule,
   ],
   controllers: [AppController],
 })

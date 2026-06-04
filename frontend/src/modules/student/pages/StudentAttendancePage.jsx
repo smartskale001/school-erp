@@ -1,31 +1,8 @@
-import React from 'react';
-import { CalendarCheck, ClipboardCheck, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CalendarCheck, ClipboardCheck, Download, AlertCircle } from 'lucide-react';
 import { Card } from '@/core/components/Card';
 import { SectionHeader } from '@/core/components/SectionHeader';
-
-const attendanceSummary = {
-  totalClasses: 220,
-  present: 198,
-  absent: 12,
-  leave: 10,
-  percentage: 90
-};
-
-const monthlyAttendance = [
-  { month: "January", percentage: 92 },
-  { month: "February", percentage: 88 },
-  { month: "March", percentage: 91 },
-  { month: "April", percentage: 87 },
-  { month: "May", percentage: 94 }
-];
-
-const subjectWiseAttendance = [
-  { subject: "Mathematics", attendance: 95 },
-  { subject: "Science", attendance: 89 },
-  { subject: "English", attendance: 93 },
-  { subject: "Computer", attendance: 90 },
-  { subject: "Social Science", attendance: 85 }
-];
+import attendanceService from '../../attendance/services/attendanceService';
 
 function getStatusInfo(percentage) {
   if (percentage >= 85) return { label: 'Excellent', color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500' };
@@ -34,7 +11,90 @@ function getStatusInfo(percentage) {
 }
 
 export default function StudentAttendancePage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const [attendanceSummary, setAttendanceSummary] = useState({
+    totalClasses: 0,
+    present: 0,
+    absent: 0,
+    leave: 0,
+    percentage: 0
+  });
+
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+  const [subjectWiseAttendance, setSubjectWiseAttendance] = useState([]);
+
+  useEffect(() => {
+    loadAttendanceData();
+  }, []);
+
+  const loadAttendanceData = async () => {
+    try {
+      setLoading(true);
+      const data = await attendanceService.getStudentAttendance();
+      
+      setAttendanceSummary({
+        totalClasses: data.totalClasses || 0,
+        present: data.presentDays || 0,
+        absent: data.absentDays || 0,
+        leave: data.leaveDays || 0,
+        percentage: data.attendancePercentage || 0
+      });
+      
+      setMonthlyAttendance(data.monthlyProgress || []);
+      
+      if (data.subjectWiseAttendance) {
+        setSubjectWiseAttendance(data.subjectWiseAttendance);
+      }
+    } catch (err) {
+      setError('Failed to load attendance data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadReport = () => {
+    const BASE_URL = 'http://localhost:4000/api'; 
+    const token = localStorage.getItem('access_token');
+    
+    fetch(`${BASE_URL}/attendance/student/me/report`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'attendance_report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(err => {
+      console.error('Download failed', err);
+    });
+  };
+
   const overallStatus = getStatusInfo(attendanceSummary.percentage);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
+        <AlertCircle size={20} />
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -43,7 +103,10 @@ export default function StudentAttendancePage() {
           title="My Attendance"
           description="Track your academic attendance and performance"
         />
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+        <button 
+          onClick={handleDownloadReport}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+        >
           <Download size={16} />
           Download Report
         </button>
@@ -88,23 +151,27 @@ export default function StudentAttendancePage() {
             Monthly Progress
           </h2>
           <div className="space-y-4">
-            {monthlyAttendance.map((item, idx) => {
-              const status = getStatusInfo(item.percentage);
-              return (
-                <div key={idx} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-gray-700">{item.month}</span>
-                    <span className={`font-semibold ${status.color}`}>{item.percentage}%</span>
+            {monthlyAttendance.length === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-4">No data available</div>
+            ) : (
+              monthlyAttendance.map((item, idx) => {
+                const status = getStatusInfo(item.attendance);
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-gray-700">{item.month}</span>
+                      <span className={`font-semibold ${status.color}`}>{item.attendance}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${status.bar}`} 
+                        style={{ width: `${item.attendance}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${status.bar}`} 
-                      style={{ width: `${item.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </Card>
 
@@ -126,24 +193,32 @@ export default function StudentAttendancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {subjectWiseAttendance.map((item, idx) => {
-                  const status = getStatusInfo(item.attendance);
-                  return (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-4 text-sm font-medium text-gray-900">
-                        {item.subject}
-                      </td>
-                      <td className="p-4 text-sm font-semibold text-gray-700">
-                        {item.attendance}%
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color}`}>
-                          {status.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {subjectWiseAttendance.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="p-4 text-center text-sm text-gray-500">
+                      No subject-wise data available
+                    </td>
+                  </tr>
+                ) : (
+                  subjectWiseAttendance.map((item, idx) => {
+                    const status = getStatusInfo(item.attendance);
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-4 text-sm font-medium text-gray-900">
+                          {item.subject}
+                        </td>
+                        <td className="p-4 text-sm font-semibold text-gray-700">
+                          {item.attendance}%
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

@@ -60,6 +60,7 @@ const navSections = [
       { label: "Leave",      icon: CalendarOff,    path: "/leave" },
       { label: "Circulars",  icon: Megaphone,      path: "/circulars", roles: ["admin", "principal"] },
       { label: "Mailbox",    icon: Mail,           path: "/mailbox",   roles: ["admin", "principal"] },
+      { label: "Attendance", icon: ClipboardCheck, path: "/attendance/mark", roles: ["admin", "principal", "teacher"] },
       { label: "Achievements", icon: Trophy,       path: "/achievements", roles: ["admin", "principal"] },
       { label: "Feedback",   icon: MessageSquare,  path: "/feedback",  roles: ["principal", "teacher"] },
     ],
