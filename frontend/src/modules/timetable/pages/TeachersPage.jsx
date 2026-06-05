@@ -63,6 +63,8 @@ export default function TeachersPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selectedClasses, setSelectedClasses] = useState([]);
+  const [isClassTeacher, setIsClassTeacher] = useState(false);
+  const [classTeacherClassId, setClassTeacherClassId] = useState("");
   const [tab, setTab] = useState("list");
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [teacherTimetable, setTeacherTimetable] = useState({});
@@ -114,6 +116,8 @@ export default function TeachersPage() {
     setEmail("");
     setPassword("");
     setSelectedClasses([]);
+    setIsClassTeacher(false);
+    setClassTeacherClassId("");
     setEditingId(null);
     setSaveError("");
   };
@@ -133,6 +137,10 @@ export default function TeachersPage() {
       setSaveError("Email and password are required.");
       return;
     }
+    if (isClassTeacher && !classTeacherClassId) {
+      setSaveError("Class Teacher Of is required when assigning as Class Teacher.");
+      return;
+    }
     setSaveError("");
     const selectedSubject = subjects.find(s => s.id === subjectId);
     const subjectName = selectedSubject ? selectedSubject.name : "";
@@ -145,6 +153,8 @@ export default function TeachersPage() {
           subjectId,
           subjectName,
           classes: selectedClasses.length ? selectedClasses : [],
+          isClassTeacher,
+          classTeacherClassId: isClassTeacher ? classTeacherClassId : null,
         });
       } else {
         await addTeacher({
@@ -156,6 +166,8 @@ export default function TeachersPage() {
           password: password.trim(),
           phone: "",
           classes: selectedClasses.length ? selectedClasses : [],
+          isClassTeacher,
+          classTeacherClassId: isClassTeacher ? classTeacherClassId : null,
         });
       }
       setTeachers(await getTeachers());
@@ -175,6 +187,8 @@ export default function TeachersPage() {
     setEmail(teacher.email || "");
     setPassword("");
     setSelectedClasses(teacher.classes || []);
+    setIsClassTeacher(teacher.isClassTeacher || false);
+    setClassTeacherClassId(teacher.classTeacherClassId || "");
     setSaveError("");
     setIsAddOpen(true);
   };
@@ -187,6 +201,8 @@ export default function TeachersPage() {
     setSubjectId(teacher.subjectId || "");
     setSubject(teacher.subject || "");
     setSelectedClasses(teacher.classes || []);
+    setIsClassTeacher(false);
+    setClassTeacherClassId("");
     setIsAddOpen(true);
   };
 
@@ -253,7 +269,14 @@ export default function TeachersPage() {
             <div className="divide-y">
               {filtered.map((t) => (
                 <div key={t.id} className="grid grid-cols-[1.5fr_1fr_1fr_2fr_1.5fr] gap-4 px-4 py-3 text-sm">
-                  <div className="font-medium text-gray-900">{t.name}</div>
+                  <div className="font-medium text-gray-900">
+                    {t.name}
+                    {t.isClassTeacher && (
+                      <div className="text-xs text-blue-600 bg-blue-50 inline-block px-1.5 py-0.5 rounded mt-1 whitespace-nowrap">
+                        Class Teacher • {t.classTeacherClassId || 'Unknown'}
+                      </div>
+                    )}
+                  </div>
                   <div className="text-gray-700">{t.shortName}</div>
                   <div className="text-gray-700">{t.subject}</div>
                   <div className="text-gray-700">
@@ -423,6 +446,36 @@ export default function TeachersPage() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <label className="flex items-center gap-2 text-sm font-medium mb-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isClassTeacher}
+                  onChange={(e) => setIsClassTeacher(e.target.checked)}
+                  className="rounded"
+                />
+                Assign as Class Teacher
+              </label>
+              
+              {isClassTeacher && (
+                <div className="pl-6 animate-in slide-in-from-top-2">
+                  <label className="block text-sm font-medium mb-1">Class Teacher Of *</label>
+                  <select
+                    className="w-full h-10 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={classTeacherClassId}
+                    onChange={(e) => setClassTeacherClassId(e.target.value)}
+                  >
+                    <option value="">[ Select Class ▼ ]</option>
+                    {classList.map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter className="flex gap-2 justify-end">

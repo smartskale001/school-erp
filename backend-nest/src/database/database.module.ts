@@ -24,6 +24,7 @@ import { StudentEntity } from './entities/student.entity';
 import { CircularEntity } from './entities/circular.entity';
 import { MailboxEntity } from './entities/mailbox.entity';
 import { AchievementEntity } from './entities/achievement.entity';
+import { MessageEntity } from './entities/message.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -49,6 +50,7 @@ const ALL_ENTITIES = [
   CircularEntity,
   MailboxEntity,
   AchievementEntity,
+  MessageEntity,
 ];
 
 @Module({

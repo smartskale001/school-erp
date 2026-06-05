@@ -27,6 +27,7 @@ import { useAcademicYear } from "@/core/context/AcademicYearContext";
 import NotificationBell from "@/core/components/NotificationBell";
 import { requestNotificationPermission } from "@/utils/firebaseNotifications";
 import logo from "@/assets/logo.png";
+import { messageService } from "@/modules/mailbox/services/messageService";
 
 
 // roles: allowlist — omit to show to everyone
@@ -60,6 +61,7 @@ const navSections = [
       { label: "Leave",      icon: CalendarOff,    path: "/leave" },
       { label: "Circulars",  icon: Megaphone,      path: "/circulars", roles: ["admin", "principal"] },
       { label: "Mailbox",    icon: Mail,           path: "/mailbox",   roles: ["admin", "principal"] },
+      { label: "Mailbox",    icon: Mail,           path: "/teacher/mailbox", roles: ["teacher"] },
       { label: "Attendance", icon: ClipboardCheck, path: "/attendance/mark", roles: ["admin", "principal", "teacher"] },
       { label: "Achievements", icon: Trophy,       path: "/achievements", roles: ["admin", "principal"] },
       { label: "Feedback",   icon: MessageSquare,  path: "/feedback",  roles: ["principal", "teacher"] },
@@ -83,7 +85,22 @@ export default function AppLayout({ children }) {
   const { userProfile, isTeacher, role, logout } = useAuth();
   const { activeYear, loading: yearLoading } = useAcademicYear();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [unreadMailCount, setUnreadMailCount] = React.useState(0);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    // Poll for mailbox unread count
+    if (role === 'teacher' || role === 'student') {
+      const fetchCount = () => {
+        messageService.getUnreadCount().then((res) => {
+          setUnreadMailCount(res.unreadCount || 0);
+        }).catch(() => {});
+      };
+      fetchCount();
+      const interval = setInterval(fetchCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [role]);
 
   React.useEffect(() => {
     // Check and request permission for returning users
@@ -141,7 +158,7 @@ export default function AppLayout({ children }) {
                 { label: "Timetable", icon: CalendarDays, path: "/timetable" },
                 { label: "Assignments", icon: ClipboardList, path: "/tasks" },
                 { label: "Circulars", icon: Megaphone, path: "/student/circulars" },
-                { label: "Mailbox", icon: Mail, path: "/student/mailbox", badge: "2" },
+                { label: "Mailbox", icon: Mail, path: "/student/mailbox" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
                 { label: "Homework", icon: BookOpen, path: "/student/homework" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
@@ -180,9 +197,9 @@ export default function AppLayout({ children }) {
                           <>
                             <Icon size={16} className={isActive ? "text-blue-600" : "text-gray-400"} />
                             <span className="flex-1 text-left">{item.label}</span>
-                            {item.badge && (
+                            {item.path.includes('mailbox') && unreadMailCount > 0 && (
                               <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                {item.badge}
+                                {unreadMailCount}
                               </span>
                             )}
                           </>

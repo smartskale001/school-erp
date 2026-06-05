@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -42,6 +42,20 @@ export class TeachersService {
     const existingTeacher = await this.repo.findOne({ where: { email: dto.email } });
     if (existingTeacher) throw new ConflictException('A teacher with this email already exists');
 
+    if (dto.isClassTeacher) {
+      if (!dto.classTeacherClassId) {
+        throw new BadRequestException('classTeacherClassId is required when assigning a Class Teacher');
+      }
+      const existingClassTeacher = await this.repo.findOne({ 
+        where: { classTeacherClassId: dto.classTeacherClassId, isClassTeacher: true } 
+      });
+      if (existingClassTeacher) {
+        throw new ConflictException(`Teacher ${existingClassTeacher.name} is already assigned as Class Teacher for this class`);
+      }
+    } else {
+      dto.classTeacherClassId = null;
+    }
+
     const { password, ...teacherData } = dto;
     const id = teacherData.id || `TCH${randomUUID().replace(/-/g, '').slice(0, 17)}`;
     const employeeCode = teacherData.employeeCode || `EMP${Date.now()}`.slice(0, 20);
@@ -74,6 +88,26 @@ export class TeachersService {
     if (dto.subjectId) {
       const subject = await this.subjectRepo.findOne({ where: { id: dto.subjectId } });
       if (!subject) throw new NotFoundException('Subject not found');
+    }
+
+    const isNowClassTeacher = dto.isClassTeacher !== undefined ? dto.isClassTeacher : teacher.isClassTeacher;
+    const targetClassId = dto.classTeacherClassId !== undefined ? dto.classTeacherClassId : teacher.classTeacherClassId;
+
+    if (isNowClassTeacher) {
+      if (!targetClassId) {
+        throw new BadRequestException('classTeacherClassId is required when assigning a Class Teacher');
+      }
+      const existingClassTeacher = await this.repo.createQueryBuilder('teacher')
+        .where('teacher.classTeacherClassId = :classId', { classId: targetClassId })
+        .andWhere('teacher.isClassTeacher = :isClassTeacher', { isClassTeacher: true })
+        .andWhere('teacher.id != :id', { id })
+        .getOne();
+        
+      if (existingClassTeacher) {
+        throw new ConflictException(`Teacher ${existingClassTeacher.name} is already assigned as Class Teacher for this class`);
+      }
+    } else if (dto.isClassTeacher === false) {
+      dto.classTeacherClassId = null;
     }
 
     await this.repo.update(id, dto);

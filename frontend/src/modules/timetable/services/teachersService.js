@@ -12,6 +12,8 @@ function mapFromApi(t) {
     phone: t.phone || '',
     email: t.email || '',
     employeeCode: t.employeeCode || '',
+    isClassTeacher: t.isClassTeacher || false,
+    classTeacherClassId: t.classTeacherClassId || null,
   };
 }
 
@@ -36,6 +38,8 @@ export async function addTeacher(teacher) {
     subjectIds: teacher.subjectId ? [teacher.subjectId] : [],
     subjectNames: teacher.subjectName ? [teacher.subjectName] : [],
     gradeLevel: teacher.classes || [],
+    isClassTeacher: teacher.isClassTeacher || false,
+    ...(teacher.isClassTeacher && teacher.classTeacherClassId ? { classTeacherClassId: teacher.classTeacherClassId } : {}),
   };
   const result = await apiRequest(API_ENDPOINTS.teachers.create, {
     method: 'POST',
@@ -54,6 +58,8 @@ export async function updateTeacher(id, updates) {
     subjectIds: updates.subjectId ? [updates.subjectId] : [],
     subjectNames: updates.subjectName ? [updates.subjectName] : [],
     gradeLevel: updates.classes || [],
+    isClassTeacher: updates.isClassTeacher !== undefined ? updates.isClassTeacher : false,
+    classTeacherClassId: updates.isClassTeacher ? updates.classTeacherClassId : null,
   };
   const result = await apiRequest(API_ENDPOINTS.teachers.update(id), {
     method: 'PATCH',

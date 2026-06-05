@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, ClipboardCheck, Download, AlertCircle } from 'lucide-react';
+import { CalendarCheck, ClipboardCheck, Download, AlertCircle, PieChart as PieChartIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/core/components/Card';
 import { SectionHeader } from '@/core/components/SectionHeader';
 import attendanceService from '../../attendance/services/attendanceService';
@@ -79,6 +80,35 @@ export default function StudentAttendancePage() {
 
   const overallStatus = getStatusInfo(attendanceSummary.percentage);
 
+  const chartData = [
+    { name: "Present", value: attendanceSummary.present },
+    { name: "Absent", value: attendanceSummary.absent },
+    { name: "Leave", value: attendanceSummary.leave },
+  ];
+
+  const CHART_COLORS = {
+    Present: '#10b981', // emerald-500
+    Absent: '#ef4444',  // red-500
+    Leave: '#f97316'    // orange-500
+  };
+
+  const renderLegend = (props) => {
+    const { payload } = props;
+    return (
+      <ul className="flex justify-center gap-5 text-sm mt-2">
+        {payload.map((entry, index) => (
+          <li key={`item-${index}`} className="flex items-center gap-1.5">
+            <span 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-gray-700 font-medium">{entry.value}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -144,33 +174,38 @@ export default function StudentAttendancePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Attendance */}
-        <Card className="p-5 col-span-1 lg:col-span-1 bg-white shadow-sm">
+        {/* Dynamic Attendance Distribution Pie Chart */}
+        <Card className="p-5 col-span-1 lg:col-span-1 bg-white shadow-sm flex flex-col">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CalendarCheck size={18} className="text-blue-600" />
-            Monthly Progress
+            <PieChartIcon size={18} className="text-blue-600" />
+            Attendance Distribution
           </h2>
-          <div className="space-y-4">
-            {monthlyAttendance.length === 0 ? (
-              <div className="text-sm text-gray-500 text-center py-4">No data available</div>
+          <div className="flex-1 min-h-[250px] flex items-center justify-center">
+            {attendanceSummary.totalClasses === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-4">No attendance data available</div>
             ) : (
-              monthlyAttendance.map((item, idx) => {
-                const status = getStatusInfo(item.attendance);
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-gray-700">{item.month}</span>
-                      <span className={`font-semibold ${status.color}`}>{item.attendance}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${status.bar}`} 
-                        style={{ width: `${item.attendance}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[entry.name]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value, name) => [`${value} days`, name]}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} content={renderLegend} />
+                </PieChart>
+              </ResponsiveContainer>
             )}
           </div>
         </Card>
@@ -221,6 +256,39 @@ export default function StudentAttendancePage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {/* Monthly Attendance */}
+        <Card className="p-5 bg-white shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <CalendarCheck size={18} className="text-blue-600" />
+            Monthly Progress
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {monthlyAttendance.length === 0 ? (
+              <div className="text-sm text-gray-500 text-center py-4 col-span-full">No data available</div>
+            ) : (
+              monthlyAttendance.map((item, idx) => {
+                const status = getStatusInfo(item.attendance);
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-gray-700">{item.month}</span>
+                      <span className={`font-semibold ${status.color}`}>{item.attendance}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${status.bar}`} 
+                        style={{ width: `${item.attendance}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>

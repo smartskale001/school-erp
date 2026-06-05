@@ -97,8 +97,6 @@ export default function AttendanceMarkingPage() {
   const statusColors = {
     present: 'bg-green-100 text-green-700 border-green-300',
     absent: 'bg-red-100 text-red-700 border-red-300',
-    late: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-    half_day: 'bg-orange-100 text-orange-700 border-orange-300',
     leave: 'bg-blue-100 text-blue-700 border-blue-300',
   };
 
@@ -181,7 +179,7 @@ export default function AttendanceMarkingPage() {
                   <td className="p-4 font-medium text-gray-900">{student.name}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
-                      {['present', 'absent', 'late', 'half_day', 'leave'].map((status) => (
+                      {['present', 'absent', 'leave'].map((status) => (
                         <button
                           key={status}
                           onClick={() => handleStatusChange(student.studentId, status)}

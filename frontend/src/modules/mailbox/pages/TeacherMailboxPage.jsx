@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Search, AlertCircle, Loader2, Send, Plus, Reply } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Mail, Search, AlertCircle, Calendar, Loader2, Send, Plus, Reply, User, Trash2 } from 'lucide-react';
 import { messageService } from '@/modules/mailbox/services/messageService';
 import { useAuth } from '@/core/context/AuthContext';
 import { apiRequest } from '@/core/api/client';
@@ -14,9 +14,10 @@ function Toast({ msg, type }) {
   );
 }
 
-export default function StudentMailboxPage() {
-  const { role } = useAuth();
+export default function TeacherMailboxPage() {
+  const { userProfile, role } = useAuth();
   const [conversations, setConversations] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -39,13 +40,13 @@ export default function StudentMailboxPage() {
   const [sending, setSending] = useState(false);
 
   // Compose form
-  const [form, setForm] = useState({ receiverId: '', subject: '', message: '' });
-  const [teachers, setTeachers] = useState([]);
+  const [form, setForm] = useState({ receiverId: '', subject: '', message: '', isBroadcastToClass: false });
+  const [students, setStudents] = useState([]);
 
   useEffect(() => {
     loadData();
-    // Load teachers for dropdown
-    apiRequest('/teachers').then(res => setTeachers(res || [])).catch(() => {});
+    // Load students for dropdown
+    apiRequest('/students').then(res => setStudents(res || [])).catch(() => {});
   }, [activeTab, query]);
 
   const loadData = () => {
@@ -62,7 +63,8 @@ export default function StudentMailboxPage() {
       messageService.getConversationDetails(selectedThreadId)
         .then(data => {
           setThreadMessages(data || []);
-          if (activeTab === 'inbox') loadData(); // refresh read status
+          // if inbox, reload to update read status
+          if (activeTab === 'inbox') loadData();
         })
         .catch(() => showToast('Failed to load thread', 'error'))
         .finally(() => setThreadLoading(false));
@@ -73,13 +75,13 @@ export default function StudentMailboxPage() {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!form.receiverId) return showToast('Select a teacher', 'error');
+    if (!form.receiverId && !form.isBroadcastToClass) return showToast('Select a student', 'error');
     if (!form.subject.trim() || !form.message.trim()) return showToast('Subject and message required', 'error');
     setSending(true);
     try {
       await messageService.sendMessage(form);
       setComposeModal(false);
-      setForm({ receiverId: '', subject: '', message: '' });
+      setForm({ receiverId: '', subject: '', message: '', isBroadcastToClass: false });
       showToast('Message sent!');
       if (activeTab === 'sent') loadData();
     } catch (err) {
@@ -129,8 +131,8 @@ export default function StudentMailboxPage() {
             <Mail size={24} className="text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Mailbox</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Communicate with your teachers</p>
+            <h1 className="text-2xl font-bold text-gray-900">Teacher Mailbox</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Communicate with your students</p>
           </div>
         </div>
         <button 
@@ -290,17 +292,34 @@ export default function StudentMailboxPage() {
               <button onClick={() => setComposeModal(false)} className="text-gray-400 hover:text-gray-600"><Plus size={20} className="rotate-45" /></button>
             </div>
             <form onSubmit={handleSend} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To Teacher *</label>
-                <select 
-                  value={form.receiverId} 
-                  onChange={e => setForm({...form, receiverId: e.target.value})}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  <option value="">Select a teacher...</option>
-                  {teachers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.subjects?.join(', ') || 'Teacher'})</option>)}
-                </select>
-              </div>
+              {userProfile?.isClassTeacher && userProfile?.classTeacherClassId && (
+                <div className="flex items-center gap-2 mb-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <input 
+                    type="checkbox" 
+                    id="broadcast"
+                    checked={form.isBroadcastToClass}
+                    onChange={e => setForm({ ...form, isBroadcastToClass: e.target.checked, receiverId: '' })}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="broadcast" className="text-sm font-medium text-blue-900 cursor-pointer">
+                    Send to entire class ({userProfile.classTeacherClassId})
+                  </label>
+                </div>
+              )}
+
+              {!form.isBroadcastToClass && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">To Student *</label>
+                  <select 
+                    value={form.receiverId} 
+                    onChange={e => setForm({...form, receiverId: e.target.value})}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Select a student...</option>
+                    {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.class})</option>)}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>

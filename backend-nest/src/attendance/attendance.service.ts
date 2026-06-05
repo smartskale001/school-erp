@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendanceEntity } from '../database/entities/attendance.entity';
@@ -6,11 +6,26 @@ import { MarkAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
 import { AttendanceStatus } from './enums/attendance-status.enum';
 
 @Injectable()
-export class AttendanceService {
+export class AttendanceService implements OnModuleInit {
   constructor(
     @InjectRepository(AttendanceEntity)
     private readonly attendanceRepo: Repository<AttendanceEntity>,
   ) {}
+
+  async onModuleInit() {
+    // Database cleanup migration: Convert any existing 'late' or 'half_day' records to 'present'
+    try {
+      await this.attendanceRepo
+        .createQueryBuilder()
+        .update(AttendanceEntity)
+        .set({ status: AttendanceStatus.PRESENT })
+        .where('status IN (:...statuses)', { statuses: ['late', 'half_day'] })
+        .execute();
+      console.log('Successfully migrated legacy attendance statuses (late/half_day -> present)');
+    } catch (err) {
+      console.error('Failed to migrate legacy attendance statuses:', err);
+    }
+  }
 
   async markAttendance(dto: MarkAttendanceDto, teacherId: string) {
     const { classId, date, section, subjectId, attendance } = dto;
@@ -63,13 +78,9 @@ export class AttendanceService {
     const totalClasses = records.length;
     const presentDays = records.filter(r => r.status === AttendanceStatus.PRESENT).length;
     const absentDays = records.filter(r => r.status === AttendanceStatus.ABSENT).length;
-    const lateDays = records.filter(r => r.status === AttendanceStatus.LATE).length;
-    const halfDays = records.filter(r => r.status === AttendanceStatus.HALF_DAY).length;
     const leaveDays = records.filter(r => r.status === AttendanceStatus.LEAVE).length;
 
-    // Treat present, late, and half_day as "present" for calculation purposes or customize as needed
-    const effectivePresentDays = presentDays + lateDays + (halfDays * 0.5); 
-    const attendancePercentage = totalClasses === 0 ? 0 : Math.round((effectivePresentDays / totalClasses) * 100);
+    const attendancePercentage = totalClasses === 0 ? 0 : Math.round((presentDays / totalClasses) * 100);
 
     // Calculate monthly progress
     const monthlyMap: Record<string, { total: number; present: number }> = {};
@@ -85,10 +96,8 @@ export class AttendanceService {
       }
       monthlyMap[monthName].total += 1;
       
-      if (r.status === AttendanceStatus.PRESENT || r.status === AttendanceStatus.LATE) {
+      if (r.status === AttendanceStatus.PRESENT) {
         monthlyMap[monthName].present += 1;
-      } else if (r.status === AttendanceStatus.HALF_DAY) {
-        monthlyMap[monthName].present += 0.5;
       }
     });
 
@@ -106,10 +115,8 @@ export class AttendanceService {
         }
         subjectMap[r.subjectId].total += 1;
         
-        if (r.status === AttendanceStatus.PRESENT || r.status === AttendanceStatus.LATE) {
+        if (r.status === AttendanceStatus.PRESENT) {
           subjectMap[r.subjectId].present += 1;
-        } else if (r.status === AttendanceStatus.HALF_DAY) {
-          subjectMap[r.subjectId].present += 0.5;
         }
       }
     });
@@ -130,10 +137,8 @@ export class AttendanceService {
 
     return {
       attendancePercentage,
-      presentDays: Math.floor(effectivePresentDays),
+      presentDays,
       absentDays,
-      lateDays,
-      halfDays,
       leaveDays,
       totalClasses,
       monthlyProgress,

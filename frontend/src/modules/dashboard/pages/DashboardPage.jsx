@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Users, BookOpen, ClipboardList, CalendarOff, AlertCircle,
   CheckCircle2, Clock, BookMarked, UserCheck, BarChart3,
-  RefreshCw, ShieldCheck, CalendarDays,
+  RefreshCw, ShieldCheck, CalendarDays, GraduationCap,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/context/AuthContext';
@@ -493,6 +493,21 @@ function TeacherDashboard() {
         <StatCard icon={CheckCircle2} label="Completed Tasks" value={completedTasks}         color="bg-green-500" />
         <StatCard icon={CalendarOff}  label="My Leaves"       value={leaves.length}          color="bg-orange-500" sub={`${pendingLeaves} pending`} onClick={() => navigate('/leave')} />
       </div>
+
+      {/* Class Teacher Banner — only shown if assigned */}
+      {teacher?.isClassTeacher && teacher?.classTeacherClassId && (
+        <div className="mb-6 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3.5">
+          <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+            <GraduationCap size={18} className="text-white" />
+          </div>
+          <div>
+            <div className="text-xs text-blue-500 font-medium uppercase tracking-wide">Homeroom Assignment</div>
+            <div className="text-sm font-semibold text-blue-900">
+              Class Teacher of <span className="text-blue-600">{teacher.classTeacherClassId}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
         <SectionCard title="My Timetable" linkTo="/timetable" linkLabel="Full view" navigate={navigate}>
