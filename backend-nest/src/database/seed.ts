@@ -28,6 +28,11 @@ import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.enti
 import { FeedbackEntity } from './entities/feedback.entity';
 import { StudentEntity } from './entities/student.entity';
 
+import { CircularEntity } from './entities/circular.entity';
+import { MailboxEntity } from './entities/mailbox.entity';
+import { AchievementEntity } from './entities/achievement.entity';
+import { MessageEntity } from './entities/message.entity';
+
 dotenv.config();
 
 const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@123';
@@ -37,7 +42,8 @@ const entitiesList = [
   RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
   LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
   TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
-  AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity
+  AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity,
+  StudentEntity, CircularEntity, MailboxEntity, AchievementEntity, MessageEntity
 ];
 
 const AppDataSource = process.env.DATABASE_URL
