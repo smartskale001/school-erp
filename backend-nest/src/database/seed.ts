@@ -18,33 +18,48 @@ import { TaskAssignmentEntity } from './entities/task-assignment.entity';
 import { LeaveApplicationEntity } from './entities/leave-application.entity';
 import { ProxyAssignmentEntity } from './entities/proxy-assignment.entity';
 import { TimetableEntity } from './entities/timetable.entity';
+import { TimetableSettingsEntity } from './entities/timetable-settings.entity';
 import { AttendanceEntity } from './entities/attendance.entity';
 import { FeeEntity } from './entities/fee.entity';
 import { ReportEntity } from './entities/report.entity';
+import { NotificationEntity } from './entities/notification.entity';
 import { AcademicYearEntity } from './entities/academic-year.entity';
 import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
+import { FeedbackEntity } from './entities/feedback.entity';
 import { StudentEntity } from './entities/student.entity';
 
 dotenv.config();
 
 const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@123';
 
-const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'school_erp',
-  entities: [
-    UserEntity, SubjectEntity, TeacherEntity, SchoolClassEntity,
-    RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
-    LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
-    AttendanceEntity, FeeEntity, ReportEntity, AcademicYearEntity,
-    TeacherLeaveBalanceEntity, StudentEntity,
-  ],
-  synchronize: true,
-});
+const entitiesList = [
+  UserEntity, SubjectEntity, TeacherEntity, SchoolClassEntity,
+  RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
+  LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
+  TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
+  AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity
+];
+
+const AppDataSource = process.env.DATABASE_URL
+  ? new DataSource({
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      entities: entitiesList,
+      synchronize: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    })
+  : new DataSource({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_NAME || 'school_erp',
+      entities: entitiesList,
+      synchronize: true,
+    });
 
 // ─── Subjects ────────────────────────────────────────────────────────────────
 const subjects: Partial<SubjectEntity>[] = [

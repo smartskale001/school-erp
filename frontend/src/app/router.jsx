@@ -18,9 +18,7 @@ const StudentDashboard       = React.lazy(() => import('../modules/dashboard/pag
 const StudentCircularsPage   = React.lazy(() => import('../modules/student/pages/StudentCircularsPage'));
 const StudentMailboxPage     = React.lazy(() => import('../modules/student/pages/StudentMailboxPage'));
 const StudentAttendancePage  = React.lazy(() => import('../modules/student/pages/StudentAttendancePage'));
-const StudentHomeworkPage    = React.lazy(() => import('../modules/student/pages/StudentHomeworkPage'));
 const StudentAchievementsPage = React.lazy(() => import('../modules/student/pages/StudentAchievementsPage'));
-const StudentSyllabusPage    = React.lazy(() => import('../modules/student/pages/StudentSyllabusPage'));
 const StudentPerformancePage = React.lazy(() => import('../modules/student/pages/StudentPerformancePage'));
 const StudentLeavePage       = React.lazy(() => import('../modules/student/pages/StudentLeavePage'));
 const TimetablePage          = React.lazy(() => import('../modules/timetable/pages/TimetablePage'));
@@ -63,6 +61,7 @@ function DenyRole({ deniedRoles, children }) {
 }
 
 const TEACHER_DENIED = ['teacher'];
+const STUDENT_DENIED = ['student'];
 
 export default function AppRouter() {
   const { user, role, loading } = useAuth();
@@ -103,13 +102,19 @@ export default function AppRouter() {
             />
             <Route path="/timetable" element={<TimetablePage />} />
 
-            {/* Tasks — all roles (teachers see their own, admins/principals see all) */}
-            <Route path="/tasks" element={<TasksListPage />} />
+            {/* Tasks — teachers see their own, admins/principals see all. Students denied. */}
+            <Route
+              path="/tasks"
+              element={<DenyRole deniedRoles={STUDENT_DENIED}><TasksListPage /></DenyRole>}
+            />
             <Route
               path="/tasks/create"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><CreateTaskPage /></DenyRole>}
+              element={<DenyRole deniedRoles={[...TEACHER_DENIED, ...STUDENT_DENIED]}><CreateTaskPage /></DenyRole>}
             />
-            <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
+            <Route
+              path="/tasks/:taskId"
+              element={<DenyRole deniedRoles={STUDENT_DENIED}><TaskDetailPage /></DenyRole>}
+            />
 
             {/* Leave — all roles */}
             <Route path="/leave" element={<LeaveListPage />} />
@@ -156,16 +161,8 @@ export default function AppRouter() {
               element={role === 'student' ? <StudentAttendancePage /> : <Navigate to="/" replace />}
             />
             <Route
-              path="/student/homework"
-              element={role === 'student' ? <StudentHomeworkPage /> : <Navigate to="/" replace />}
-            />
-            <Route
               path="/student/achievements"
               element={role === 'student' ? <StudentAchievementsPage /> : <Navigate to="/" replace />}
-            />
-            <Route
-              path="/student/syllabus"
-              element={role === 'student' ? <StudentSyllabusPage /> : <Navigate to="/" replace />}
             />
             <Route
               path="/student/performance"

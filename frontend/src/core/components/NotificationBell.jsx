@@ -43,7 +43,7 @@ function useNotifications() {
           color: color,
           label: n.title,
           message: n.message,
-          path: n.type === "task" ? "/tasks" : n.type === "feedback" ? "/feedback" : "/leave",
+          path: n.type === "task" ? (role === "student" ? "/" : "/tasks") : n.type === "feedback" ? "/feedback" : "/leave",
           isRead: n.isRead,
           createdAt: n.createdAt,
           type: n.type,

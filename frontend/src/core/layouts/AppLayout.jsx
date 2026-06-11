@@ -156,13 +156,10 @@ export default function AppLayout({ children }) {
               label: "ACADEMICS",
               items: [
                 { label: "Timetable", icon: CalendarDays, path: "/timetable" },
-                { label: "Assignments", icon: ClipboardList, path: "/tasks" },
                 { label: "Circulars", icon: Megaphone, path: "/student/circulars" },
                 { label: "Mailbox", icon: Mail, path: "/student/mailbox" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
-                { label: "Homework", icon: BookOpen, path: "/student/homework" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
-                { label: "Syllabus", icon: FileText, path: "/student/syllabus" },
                 { label: "Performance", icon: BarChart3, path: "/student/performance" },
                 { label: "Leave", icon: CalendarOff, path: "/student/leave" },
               ],

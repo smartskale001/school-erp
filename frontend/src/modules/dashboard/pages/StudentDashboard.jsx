@@ -46,20 +46,12 @@ export default function StudentDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="mt-6">
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">My Timetable</h2>
           <div className="flex flex-col items-center justify-center py-10 text-gray-500">
             <CalendarDays size={48} className="text-gray-300 mb-3" />
             <p>Your timetable will appear here.</p>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">My Assignments</h2>
-          <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-            <ClipboardList size={48} className="text-gray-300 mb-3" />
-            <p>Your assignments will appear here.</p>
           </div>
         </Card>
       </div>
