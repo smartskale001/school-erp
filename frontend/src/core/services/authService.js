@@ -1,4 +1,10 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+let base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+base = base.replace(/\/+$/, '');
+if (!base.endsWith('/api')) {
+  base += '/api';
+}
+const API_URL = base;
+
 const LOCAL_STORAGE_KEYS_TO_CLEAR = [
   'access_token',
   'refresh_token',
