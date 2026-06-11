@@ -62,7 +62,7 @@ const ALL_ENTITIES = [
         const baseOptions = {
           type: 'postgres' as const,
           entities: ALL_ENTITIES,
-          synchronize: config.get('NODE_ENV') !== 'production',
+          synchronize: true, // Always true for now to auto-create tables on Render
           logging: config.get('NODE_ENV') === 'development',
           ssl:
             config.get('NODE_ENV') === 'production'
