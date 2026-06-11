@@ -31,7 +31,9 @@ async function bootstrap() {
         !!origin &&
         /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
-      if (!origin || configuredOrigins.includes(origin) || isLocalDevOrigin) {
+      const isVercelOrigin = !!origin && origin.endsWith('.vercel.app');
+
+      if (!origin || configuredOrigins.includes(origin) || isLocalDevOrigin || isVercelOrigin) {
         callback(null, true);
         return;
       }

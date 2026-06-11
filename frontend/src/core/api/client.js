@@ -1,6 +1,13 @@
 import { authService, getAccessToken } from '@/core/services/authService';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+let base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// Remove trailing slashes
+base = base.replace(/\/+$/, '');
+// Ensure it ends with /api if not present
+if (!base.endsWith('/api')) {
+  base += '/api';
+}
+const API_URL = base;
 
 /**
  * Base API client. Attaches JWT access token and auto-refreshes on 401.
