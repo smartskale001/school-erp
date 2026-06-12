@@ -39,7 +39,19 @@ export class FirebaseService implements OnModuleInit {
       return;
     }
 
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    let user = null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
+    try {
+      if (isUuid) {
+        user = await this.userRepo.findOne({ where: { id: userId } });
+      } else {
+        user = await this.userRepo.findOne({ where: { teacherId: userId } });
+      }
+    } catch (e) {
+      this.logger.error(`Error querying user for FCM token: ${e.message}`);
+    }
+
     if (!user || !user.fcmToken) {
       this.logger.debug(`User ${userId} has no FCM token. Skipping push notification.`);
       return;

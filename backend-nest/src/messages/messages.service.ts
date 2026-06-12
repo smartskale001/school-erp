@@ -95,7 +95,7 @@ export class MessagesService {
     });
 
     if (messages.length === 0) {
-      throw new NotFoundException('Conversation not found');
+      return [];
     }
 
     // Mark unread messages as read

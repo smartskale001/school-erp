@@ -28,6 +28,7 @@ import NotificationBell from "@/core/components/NotificationBell";
 import { requestNotificationPermission } from "@/utils/firebaseNotifications";
 import logo from "@/assets/logo.png";
 import { messageService } from "@/modules/mailbox/services/messageService";
+import HelpDrawer from "@/components/help/HelpDrawer";
 
 
 // roles: allowlist — omit to show to everyone
@@ -160,7 +161,6 @@ export default function AppLayout({ children }) {
                 { label: "Mailbox", icon: Mail, path: "/student/mailbox" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
                 { label: "Achievements", icon: Trophy, path: "/student/achievements" },
-                { label: "Performance", icon: BarChart3, path: "/student/performance" },
                 { label: "Leave", icon: CalendarOff, path: "/student/leave" },
               ],
             }
@@ -273,6 +273,8 @@ export default function AppLayout({ children }) {
       <main className="ml-[240px] mt-[56px] bg-gray-50 min-h-screen p-7">
         {children ?? <Outlet />}
       </main>
+      
+      <HelpDrawer />
     </div>
   );
 }

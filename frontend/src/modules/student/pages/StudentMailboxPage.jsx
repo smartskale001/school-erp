@@ -107,7 +107,7 @@ export default function StudentMailboxPage() {
   const handleDelete = async (id) => {
     try {
       await messageService.deleteMessage(id);
-      showToast('Message deleted');
+      showToast('Message deleted successfully');
       if (selectedThreadId) {
         const data = await messageService.getConversationDetails(selectedThreadId);
         setThreadMessages(data || []);
