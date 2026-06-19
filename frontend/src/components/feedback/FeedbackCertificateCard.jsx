@@ -346,7 +346,7 @@ const FeedbackCertificateCard = forwardRef(function FeedbackCertificateCard(
               <img src={logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
-              <div style={styles.schoolName}>JAVIYA SCHOOLING SYSTEM</div>
+              <div style={styles.schoolName}>EduSkale</div>
               <div style={styles.schoolSession}>Academic Session {session}</div>
             </div>
           </div>
