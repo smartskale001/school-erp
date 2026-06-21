@@ -1,8 +1,8 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import AppLayout from '../core/layouts/AppLayout';
 import { useAuth } from '../core/context/AuthContext';
+import AppLayout from '../core/layouts/AppLayout';
 
 // ─── Auth pages: kept eager — they're tiny and load on app start ───────────
 import LoginPage from '../modules/auth/pages/LoginPage';
@@ -42,6 +42,12 @@ const MailboxManagementPage  = React.lazy(() => import('../modules/mailbox/pages
 const TeacherMailboxPage     = React.lazy(() => import('../modules/mailbox/pages/TeacherMailboxPage'));
 const AchievementManagementPage = React.lazy(() => import('../modules/achievements/pages/AchievementManagementPage'));
 const AttendanceMarkingPage  = React.lazy(() => import('../modules/attendance/pages/AttendanceMarkingPage'));
+const TeacherHomeworkPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkPage'));
+const TeacherHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkDetailPage'));
+const StudentHomeworkPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkPage'));
+const StudentHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkDetailPage'));
+const HomeworkMonitoringPage = React.lazy(() => import('../modules/homework/pages/HomeworkMonitoringPage'));
+const TeachingAssignmentsPage = React.lazy(() => import('../modules/homework/pages/TeachingAssignmentsPage'));
 
 // Shared route-level loading spinner
 function PageLoader() {
@@ -100,6 +106,12 @@ export default function AppRouter() {
               element={<DenyRole deniedRoles={TEACHER_DENIED}><RoomsPage /></DenyRole>}
             />
             <Route path="/timetable" element={<TimetablePage />} />
+
+            {/* Homework */}
+            <Route path="/homework" element={role === 'teacher' ? <TeacherHomeworkPage /> : <Navigate to="/" replace />} />
+            <Route path="/homework/:homeworkId" element={role === 'teacher' ? <TeacherHomeworkDetailPage /> : <Navigate to="/" replace />} />
+            <Route path="/homework/monitor" element={['admin', 'principal', 'coordinator'].includes(role) ? <HomeworkMonitoringPage /> : <Navigate to="/" replace />} />
+            <Route path="/teaching-assignments" element={role === 'admin' ? <TeachingAssignmentsPage /> : <Navigate to="/" replace />} />
 
             {/* Tasks — teachers see their own, admins/principals see all. Students denied. */}
             <Route
@@ -166,6 +178,14 @@ export default function AppRouter() {
             <Route
               path="/student/leave"
               element={role === 'student' ? <StudentLeavePage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/homework"
+              element={role === 'student' ? <StudentHomeworkPage /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/student/homework/:assignmentId"
+              element={role === 'student' ? <StudentHomeworkDetailPage /> : <Navigate to="/" replace />}
             />
 
             {/* Reports */}

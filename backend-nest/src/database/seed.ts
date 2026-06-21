@@ -32,6 +32,10 @@ import { CircularEntity } from './entities/circular.entity';
 import { MailboxEntity } from './entities/mailbox.entity';
 import { AchievementEntity } from './entities/achievement.entity';
 import { MessageEntity } from './entities/message.entity';
+import { HomeworkEntity } from './entities/homework.entity';
+import { HomeworkAssignmentEntity } from './entities/homework-assignment.entity';
+import { HomeworkSubmissionEntity } from './entities/homework-submission.entity';
+import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
 
 dotenv.config();
 
@@ -43,7 +47,8 @@ const entitiesList = [
   LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
   TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
   AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity,
-  StudentEntity, CircularEntity, MailboxEntity, AchievementEntity, MessageEntity
+  StudentEntity, CircularEntity, MailboxEntity, AchievementEntity, MessageEntity,
+  HomeworkEntity, HomeworkAssignmentEntity, HomeworkSubmissionEntity, TeachingAssignmentEntity
 ];
 
 const AppDataSource = process.env.DATABASE_URL
@@ -228,6 +233,16 @@ async function seed() {
     }));
     await AppDataSource.getRepository(TeacherLeaveBalanceEntity).upsert(balances, ['teacherId', 'academicYearId']);
     console.log(` ${balances.length} rows OK`);
+
+    process.stdout.write('Seeding teaching assignments...');
+    const teachingAssignments = [
+      { teacherId: 'T-025', classId: 'CLS-010', section: 'A', subjectId: 'SUB-001', academicYearId: activeYear.id, schoolId: 'school_001', isActive: true },
+      { teacherId: 'T-025', classId: 'CLS-010', section: 'B', subjectId: 'SUB-001', academicYearId: activeYear.id, schoolId: 'school_001', isActive: true },
+      { teacherId: 'T-020', classId: 'CLS-010', section: 'A', subjectId: 'SUB-003', academicYearId: activeYear.id, schoolId: 'school_001', isActive: true },
+      { teacherId: 'T-020', classId: 'CLS-010', section: 'B', subjectId: 'SUB-003', academicYearId: activeYear.id, schoolId: 'school_001', isActive: true },
+    ];
+    await AppDataSource.getRepository(TeachingAssignmentEntity).upsert(teachingAssignments, ['teacherId', 'classId', 'section', 'subjectId', 'academicYearId']);
+    console.log(` ${teachingAssignments.length} rows OK`);
   }
 
   process.stdout.write('Seeding teacher users (34)...');

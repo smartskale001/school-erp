@@ -24,6 +24,8 @@ import { MailboxModule } from './mailbox/mailbox.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { StudentsModule } from './students/students.module';
 import { MessagesModule } from './messages/messages.module';
+import { HomeworkModule } from './homework/homework.module';
+import { TeachingAssignmentsModule } from './teaching-assignments/teaching-assignments.module';
 import { AppController } from './app.controller';
 import { validate } from './config/env.validation';
 
@@ -54,6 +56,8 @@ import { validate } from './config/env.validation';
     AchievementsModule,
     StudentsModule,
     MessagesModule,
+    HomeworkModule,
+    TeachingAssignmentsModule,
   ],
   controllers: [AppController],
 })

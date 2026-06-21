@@ -1,5 +1,3 @@
-import React from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
@@ -20,15 +18,18 @@ import {
   Mail,
   ClipboardCheck,
   Trophy,
-  FileText,
+  NotebookPen,
 } from "lucide-react";
-import { useAuth } from "@/core/context/AuthContext";
-import { useAcademicYear } from "@/core/context/AcademicYearContext";
-import NotificationBell from "@/core/components/NotificationBell";
-import { requestNotificationPermission } from "@/utils/firebaseNotifications";
+import React from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+
 import logo from "@/assets/logo.png";
-import { messageService } from "@/modules/mailbox/services/messageService";
 import HelpDrawer from "@/components/help/HelpDrawer";
+import NotificationBell from "@/core/components/NotificationBell";
+import { useAcademicYear } from "@/core/context/AcademicYearContext";
+import { useAuth } from "@/core/context/AuthContext";
+import { messageService } from "@/modules/mailbox/services/messageService";
+import { requestNotificationPermission } from "@/utils/firebaseNotifications";
 
 
 // roles: allowlist — omit to show to everyone
@@ -47,6 +48,7 @@ const navSections = [
       { label: "Teachers",     icon: Users,         path: "/teachers",     roles: ["admin", "coordinator"] },
       { label: "Subjects",     icon: GraduationCap, path: "/subjects",     roles: ["admin", "coordinator"] },
       { label: "Rooms",        icon: LayoutGrid,    path: "/rooms",        roles: ["admin", "coordinator"] },
+      { label: "Teaching Assignments", icon: NotebookPen, path: "/teaching-assignments", roles: ["admin"] },
     ],
   },
   {
@@ -59,6 +61,8 @@ const navSections = [
     label: "OPERATIONS",
     items: [
       { label: "Tasks",      icon: ClipboardList,  path: "/tasks" },
+      { label: "Homework",   icon: NotebookPen,    path: "/homework", roles: ["teacher"] },
+      { label: "Homework Monitor", icon: NotebookPen, path: "/homework/monitor", roles: ["admin", "principal", "coordinator"] },
       { label: "Leave",      icon: CalendarOff,    path: "/leave" },
       { label: "Circulars",  icon: Megaphone,      path: "/circulars", roles: ["admin", "principal"] },
       { label: "Mailbox",    icon: Mail,           path: "/mailbox",   roles: ["admin", "principal"] },
@@ -83,7 +87,7 @@ const navSections = [
 ];
 
 export default function AppLayout({ children }) {
-  const { userProfile, isTeacher, role, logout } = useAuth();
+  const { userProfile, role, logout } = useAuth();
   const { activeYear, loading: yearLoading } = useAcademicYear();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [unreadMailCount, setUnreadMailCount] = React.useState(0);
@@ -157,6 +161,7 @@ export default function AppLayout({ children }) {
               label: "ACADEMICS",
               items: [
                 { label: "Timetable", icon: CalendarDays, path: "/timetable" },
+                { label: "Homework", icon: NotebookPen, path: "/student/homework" },
                 { label: "Circulars", icon: Megaphone, path: "/student/circulars" },
                 { label: "Mailbox", icon: Mail, path: "/student/mailbox" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
