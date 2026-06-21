@@ -1,110 +1,85 @@
-import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, UseGuards, UseInterceptors, UploadedFile,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { HomeworkService } from './homework.service';
-import { CreateHomeworkDto, UpdateHomeworkDto, UpdateStudentHomeworkStatusDto } from './dto/homework.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Role } from '../common/enums/role.enum';
+import { HomeworkService } from './homework.service';
+import { AddHomeworkAssignmentsDto, CreateHomeworkDto, HomeworkMonitorQueryDto, ReviewHomeworkSubmissionDto, SubmitHomeworkDto, UpdateHomeworkDto, UpdateHomeworkStatusDto } from './dto/homework.dto';
+import { homeworkUploadOptions } from './homework.upload';
 
 @ApiTags('Homework')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('homework')
 export class HomeworkController {
-  constructor(private readonly homeworkService: HomeworkService) {}
+  constructor(private readonly service: HomeworkService) {}
 
-  @Post()
-  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.TEACHER)
-  @ApiOperation({ summary: 'Create homework' })
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname.replace(/\\s+/g, '_')}`;
-        cb(null, uniqueName);
-      },
-    }),
-  }))
-  create(
-    @Body() dto: CreateHomeworkDto,
-    @CurrentUser() user: any,
-    @UploadedFile() file?: any,
-  ) {
-    if (file) {
-      const baseUrl = process.env.BACKEND_URL || 'http://localhost:4000';
-      dto.attachmentUrl = `${baseUrl}/uploads/${file.filename}`;
-    }
-    return this.homeworkService.createHomework(dto, user.teacherId || user.id, user.name || 'Teacher');
-  }
-
-  @Patch(':id')
-  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.TEACHER)
-  @ApiOperation({ summary: 'Update homework' })
-  update(@Param('id') id: string, @Body() dto: UpdateHomeworkDto, @CurrentUser() user: any) {
-    const isAdmin = [Role.ADMIN, Role.PRINCIPAL].includes(user.role);
-    return this.homeworkService.updateHomework(id, dto, user.teacherId || user.id, isAdmin);
-  }
-
-  @Delete(':id')
-  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.TEACHER)
-  @ApiOperation({ summary: 'Delete homework' })
-  remove(@Param('id') id: string, @CurrentUser() user: any) {
-    const isAdmin = [Role.ADMIN, Role.PRINCIPAL].includes(user.role);
-    return this.homeworkService.deleteHomework(id, user.teacherId || user.id, isAdmin);
-  }
+  @Get('teacher/context')
+  @Roles(Role.TEACHER)
+  context(@CurrentUser() user: any) { return this.service.getTeacherContext(user.teacherId); }
 
   @Get('teacher/me')
-  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.TEACHER)
-  @ApiOperation({ summary: 'Get teacher homework' })
-  getTeacherHomework(@CurrentUser() user: any) {
-    return this.homeworkService.getTeacherHomework(user.teacherId || user.id);
+  @Roles(Role.TEACHER)
+  teacherHomework(@CurrentUser() user: any) { return this.service.getTeacherHomework(user.teacherId); }
+
+  @Post()
+  @Roles(Role.TEACHER)
+  @UseInterceptors(FileInterceptor('attachment', homeworkUploadOptions))
+  create(@Body() dto: CreateHomeworkDto, @CurrentUser() user: any, @UploadedFile() file?: any) {
+    return this.service.createHomework(dto, user.teacherId, file);
   }
 
-  @Get('class/:classId')
-  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.TEACHER, Role.COORDINATOR)
-  @ApiOperation({ summary: 'Get class homework' })
-  getClassHomework(@Param('classId') classId: string) {
-    return this.homeworkService.getClassHomework(classId);
+  @Post(':id/assignments')
+  @Roles(Role.TEACHER)
+  addAssignments(@Param('id') id: string, @Body() dto: AddHomeworkAssignmentsDto, @CurrentUser() user: any) {
+    return this.service.addAssignments(id, dto, user.teacherId);
   }
 
-  // --- Student Routes ---
+  @Get('assignments/:id/submissions')
+  @Roles(Role.TEACHER)
+  submissions(@Param('id') id: string, @CurrentUser() user: any) { return this.service.getAssignmentSubmissions(id, user.teacherId); }
+
+  @Patch('submissions/:id/review')
+  @Roles(Role.TEACHER)
+  review(@Param('id') id: string, @Body() dto: ReviewHomeworkSubmissionDto, @CurrentUser() user: any) {
+    return this.service.reviewSubmission(id, dto, user.teacherId);
+  }
 
   @Get('student/me')
   @Roles(Role.STUDENT)
-  @ApiOperation({ summary: 'Get student homework' })
-  getStudentHomework(@CurrentUser() user: any) {
-    return this.homeworkService.getStudentHomework(user.id);
-  }
+  studentHomework(@CurrentUser() user: any) { return this.service.getStudentHomework(user.id); }
 
-  @Get('student/stats')
+  @Get('student/assignments/:id')
   @Roles(Role.STUDENT)
-  @ApiOperation({ summary: 'Get student homework stats' })
-  getStudentStats(@CurrentUser() user: any) {
-    return this.homeworkService.getStudentStats(user.id);
-  }
+  studentAssignment(@Param('id') id: string, @CurrentUser() user: any) { return this.service.getStudentAssignment(id, user.id); }
 
-  @Patch('student/:homeworkId/status')
+  @Post('student/assignments/:id/submission')
   @Roles(Role.STUDENT)
-  @ApiOperation({ summary: 'Update student homework status' })
-  updateStatus(
-    @Param('homeworkId') homeworkId: string,
-    @Body() dto: UpdateStudentHomeworkStatusDto,
-    @CurrentUser() user: any,
-  ) {
-    return this.homeworkService.updateStudentHomeworkStatus(homeworkId, user.id, dto);
+  @UseInterceptors(FileInterceptor('file', homeworkUploadOptions))
+  submit(@Param('id') id: string, @Body() dto: SubmitHomeworkDto, @CurrentUser() user: any, @UploadedFile() file?: any) {
+    return this.service.submitHomework(id, dto, user.id, file);
   }
 
-  @Post('mark-overdue')
+  @Get('monitor')
+  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR)
+  monitor(@Query() query: HomeworkMonitorQueryDto) { return this.service.monitor(query); }
+
+  @Get('monitor/:id')
+  @Roles(Role.ADMIN, Role.PRINCIPAL, Role.COORDINATOR)
+  monitorDetail(@Param('id') id: string) { return this.service.getHomeworkWithAssignments(id); }
+
+  @Patch(':id/status')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Mark overdue homework' })
-  markOverdue() {
-    return this.homeworkService.markOverdueHomework();
-  }
+  updateStatus(@Param('id') id: string, @Body() dto: UpdateHomeworkStatusDto) { return this.service.updateStatus(id, dto.status); }
+
+  @Get(':id')
+  @Roles(Role.TEACHER)
+  detail(@Param('id') id: string, @CurrentUser() user: any) { return this.service.getHomeworkWithAssignments(id, user.teacherId); }
+
+  @Patch(':id')
+  @Roles(Role.TEACHER)
+  update(@Param('id') id: string, @Body() dto: UpdateHomeworkDto, @CurrentUser() user: any) { return this.service.updateHomework(id, dto, user.teacherId); }
 }

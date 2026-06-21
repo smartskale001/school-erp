@@ -24,6 +24,9 @@ pnpm-debug.log*
 # Test and coverage output
 coverage/
 
+# Uploaded files (runtime artifacts, never commit)
+uploads/
+
 # Editor and OS files
 .DS_Store
 Thumbs.db

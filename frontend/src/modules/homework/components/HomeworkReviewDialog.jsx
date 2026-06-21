@@ -1,0 +1,8 @@
+import React, { useState } from 'react';
+
+export default function HomeworkReviewDialog({ submission, onClose, onSave }) {
+  const [marksObtained, setMarks] = useState(submission?.marksObtained ?? '');
+  const [teacherFeedback, setFeedback] = useState(submission?.teacherFeedback ?? '');
+  if (!submission) return null;
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><form onSubmit={(event) => { event.preventDefault(); onSave({ marksObtained: marksObtained === '' ? undefined : Number(marksObtained), teacherFeedback }); }} className="w-full max-w-lg rounded-xl bg-white p-6 space-y-4"><div className="flex justify-between"><h2 className="font-bold">Review {submission.studentName}</h2><button type="button" onClick={onClose}>×</button></div>{submission.submissionText && <p className="rounded bg-gray-50 p-3 text-sm whitespace-pre-wrap">{submission.submissionText}</p>}{submission.fileUrl && <a className="text-blue-600 text-sm" href={submission.fileUrl} target="_blank" rel="noreferrer">Open submitted file</a>}<label className="block text-sm">Marks<input type="number" step="0.01" value={marksObtained} onChange={(event) => setMarks(event.target.value)} className="mt-1 w-full rounded border p-2" /></label><label className="block text-sm">Feedback<textarea value={teacherFeedback} onChange={(event) => setFeedback(event.target.value)} className="mt-1 w-full rounded border p-2" /></label><div className="flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-2">Cancel</button><button className="rounded bg-blue-600 px-3 py-2 text-white">Save review</button></div></form></div>;
+}

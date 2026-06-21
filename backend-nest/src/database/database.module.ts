@@ -25,6 +25,10 @@ import { CircularEntity } from './entities/circular.entity';
 import { MailboxEntity } from './entities/mailbox.entity';
 import { AchievementEntity } from './entities/achievement.entity';
 import { MessageEntity } from './entities/message.entity';
+import { HomeworkEntity } from './entities/homework.entity';
+import { HomeworkAssignmentEntity } from './entities/homework-assignment.entity';
+import { HomeworkSubmissionEntity } from './entities/homework-submission.entity';
+import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
 
 const ALL_ENTITIES = [
   UserEntity,
@@ -51,6 +55,10 @@ const ALL_ENTITIES = [
   MailboxEntity,
   AchievementEntity,
   MessageEntity,
+  HomeworkEntity,
+  HomeworkAssignmentEntity,
+  HomeworkSubmissionEntity,
+  TeachingAssignmentEntity,
 ];
 
 @Module({

@@ -115,4 +115,15 @@ export const API_ENDPOINTS = {
     teachers: '/feedback/teachers',
     item: (id) => `/feedback/${id}`,
   },
+  homework: {
+    teacherContext: '/homework/teacher/context',
+    teacherMine: '/homework/teacher/me',
+    studentMine: '/homework/student/me',
+    monitor: '/homework/monitor',
+  },
+  teachingAssignments: {
+    list: '/teaching-assignments',
+    create: '/teaching-assignments',
+    update: (id) => `/teaching-assignments/${id}`,
+  },
 };

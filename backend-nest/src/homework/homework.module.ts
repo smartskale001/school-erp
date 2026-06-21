@@ -1,27 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HomeworkService } from './homework.service';
-import { HomeworkController } from './homework.controller';
 import { HomeworkEntity } from '../database/entities/homework.entity';
-import { StudentHomeworkEntity } from '../database/entities/student-homework.entity';
+import { HomeworkAssignmentEntity } from '../database/entities/homework-assignment.entity';
+import { HomeworkSubmissionEntity } from '../database/entities/homework-submission.entity';
+import { TeachingAssignmentEntity } from '../database/entities/teaching-assignment.entity';
 import { StudentEntity } from '../database/entities/student.entity';
-import { UserEntity } from '../database/entities/user.entity';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { TeacherEntity } from '../database/entities/teacher.entity';
+import { SubjectEntity } from '../database/entities/subject.entity';
+import { SchoolClassEntity } from '../database/entities/class.entity';
+import { HomeworkController } from './homework.controller';
+import { HomeworkService } from './homework.service';
 import { AcademicYearsModule } from '../academic-years/academic-years.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      HomeworkEntity,
-      StudentHomeworkEntity,
-      StudentEntity,
-      UserEntity,
-    ]),
-    NotificationsModule,
+    TypeOrmModule.forFeature([HomeworkEntity, HomeworkAssignmentEntity, HomeworkSubmissionEntity, TeachingAssignmentEntity, StudentEntity, TeacherEntity, SubjectEntity, SchoolClassEntity]),
     AcademicYearsModule,
   ],
-  providers: [HomeworkService],
   controllers: [HomeworkController],
-  exports: [HomeworkService],
+  providers: [HomeworkService],
 })
 export class HomeworkModule {}
