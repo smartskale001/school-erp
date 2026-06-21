@@ -139,7 +139,7 @@ export default function AppLayout({ children }) {
             </div>
             <div>
               <div className="font-bold text-gray-900 text-[10px] leading-tight opacity-60">Welcome to</div>
-              <div className="font-extrabold text-gray-900 text-sm leading-tight">Javiya Schooling System</div>
+              <div className="font-extrabold text-gray-900 text-sm leading-tight">EduSkale</div>
             </div>
           </div>
         </div>

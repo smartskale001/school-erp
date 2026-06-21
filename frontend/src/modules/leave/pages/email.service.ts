@@ -26,7 +26,7 @@ export class EmailService {
         <p>Hello ${teacherName},</p>
         <p>You have been assigned a new task: <strong>${taskTitle}</strong></p>
         <p><strong>Due Date:</strong> ${dateStr}</p>
-        <p>Please log in to the Javiya Schooling System to view details and update your progress.</p>
+        <p>Please log in to the EduSkale to view details and update your progress.</p>
         <br />
         <p>Regards,<br />School Administration</p>
       </div>
@@ -64,7 +64,7 @@ export class EmailService {
         <p><strong>Reason:</strong> ${reason}</p>
         <p>Please review the application in the administration dashboard.</p>
         <br />
-        <p>Regards,<br />Javiya Schooling System</p>
+        <p>Regards,<br />EduSkale</p>
       </div>
     `;
 
@@ -89,17 +89,17 @@ export class EmailService {
     const html = `
       <div style="font-family: sans-serif; padding: 20px; color: #333; border: 1px solid #eee; border-radius: 8px;">
         <h2 style="color: #2563eb;">ERP Connectivity Test</h2>
-        <p>Hello, this is a test email from the Javiya Schooling System.</p>
+        <p>Hello, this is a test email from the EduSkale.</p>
         <p>Timestamp: ${new Date().toLocaleString()}</p>
       </div>
     `;
-    return this.sendMail(to, 'Javiya Schooling System - SMTP Test', html);
+    return this.sendMail(to, 'EduSkale - SMTP Test', html);
   }
 
   private async sendMail(to: string, subject: string, html: string) {
     try {
       const info = await this.transporter.sendMail({
-        from: '"Javiya Schooling System" <noreply@javiyaschool.com>',
+        from: '"EduSkale" <noreply@javiyaschool.com>',
         to,
         subject,
         html,

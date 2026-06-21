@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="bg-white p-8 rounded-xl border border-gray-200 w-full max-w-sm shadow-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <img src={logo} alt="Logo" className="w-16 h-16 object-contain mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Welcome to <br /> Javiya Schooling System</h1>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Welcome to <br /> EduSkale</h1>
           <p className="text-sm text-gray-500 mt-1">
             Sign in to your account.{' '}
             <Link to="/signup" className="text-emerald-600 hover:underline font-medium">
