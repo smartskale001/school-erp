@@ -5,6 +5,7 @@ import { UserEntity } from './entities/user.entity';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
 import { SchoolClassEntity } from './entities/class.entity';
+import { SectionEntity } from './entities/section.entity';
 import { RoomEntity } from './entities/room.entity';
 import { PeriodEntity } from './entities/period.entity';
 import { TaskEntity } from './entities/task.entity';
@@ -35,6 +36,7 @@ const ALL_ENTITIES = [
   SubjectEntity,
   TeacherEntity,
   SchoolClassEntity,
+  SectionEntity,
   RoomEntity,
   PeriodEntity,
   TaskEntity,

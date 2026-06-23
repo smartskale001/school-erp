@@ -8,6 +8,9 @@ export class RoomEntity {
   @Column({ length: 100 })
   name: string;
 
+  @Column({ default: 'classroom', length: 30 })
+  type: string;
+
   @Column({ default: 30 })
   capacity: number;
 

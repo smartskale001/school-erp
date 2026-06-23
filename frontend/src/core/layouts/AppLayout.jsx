@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   Trophy,
   NotebookPen,
+  School,
 } from "lucide-react";
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -60,6 +61,7 @@ const navSections = [
   {
     label: "OPERATIONS",
     items: [
+      { label: "Class Management", icon: School,   path: "/class-management", roles: ["admin", "principal"] },
       { label: "Tasks",      icon: ClipboardList,  path: "/tasks" },
       { label: "Homework",   icon: NotebookPen,    path: "/homework", roles: ["teacher"] },
       { label: "Homework Monitor", icon: NotebookPen, path: "/homework/monitor", roles: ["admin", "principal", "coordinator"] },

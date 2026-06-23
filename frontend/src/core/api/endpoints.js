@@ -42,6 +42,13 @@ export const API_ENDPOINTS = {
     update: (id) => `/rooms/${id}`,
     remove: (id) => `/rooms/${id}`,
   },
+  sections: {
+    list: '/sections',
+    get: (id) => `/sections/${id}`,
+    create: '/sections',
+    update: (id) => `/sections/${id}`,
+    remove: (id) => `/sections/${id}`,
+  },
   periods: {
     list: '/periods',
     get: (id) => `/periods/${id}`,

@@ -10,6 +10,7 @@ import { Role } from '../common/enums/role.enum';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
 import { SchoolClassEntity } from './entities/class.entity';
+import { SectionEntity } from './entities/section.entity';
 import { RoomEntity } from './entities/room.entity';
 import { PeriodEntity } from './entities/period.entity';
 import { UserEntity } from './entities/user.entity';
@@ -43,7 +44,7 @@ const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@1
 
 const entitiesList = [
   UserEntity, SubjectEntity, TeacherEntity, SchoolClassEntity,
-  RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
+  SectionEntity, RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
   LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
   TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
   AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity,
@@ -146,17 +147,43 @@ const classes: Partial<SchoolClassEntity>[] = [
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
 const rooms: Partial<RoomEntity>[] = [
-  { id: 'ROOM-001', name: 'Room 101',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-002', name: 'Room 102',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-003', name: 'Room 103',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-004', name: 'Room 104',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-005', name: 'Room 201',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-006', name: 'Room 202',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-007', name: 'Computer Lab', capacity: 30,  schoolId: 'school_001' },
-  { id: 'ROOM-008', name: 'Science Lab',  capacity: 30,  schoolId: 'school_001' },
-  { id: 'ROOM-009', name: 'Art Room',     capacity: 35,  schoolId: 'school_001' },
-  { id: 'ROOM-010', name: 'PT Ground',    capacity: 200, schoolId: 'school_001' },
+  { id: 'ROOM-001', name: 'Room 101',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-002', name: 'Room 102',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-003', name: 'Room 103',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-004', name: 'Room 104',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-005', name: 'Room 201',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-006', name: 'Room 202',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-007', name: 'Computer Lab', type: 'computer_lab', capacity: 30,  schoolId: 'school_001' },
+  { id: 'ROOM-008', name: 'Science Lab',  type: 'lab',          capacity: 30,  schoolId: 'school_001' },
+  { id: 'ROOM-009', name: 'Art Room',     type: 'other',        capacity: 35,  schoolId: 'school_001' },
+  { id: 'ROOM-010', name: 'PT Ground',    type: 'hall',         capacity: 200, schoolId: 'school_001' },
 ];
+
+// ─── Sections (class-sections) ───────────────────────────────────────────────
+// Derived from the classes above so every "Class X - Y" exists as a real row.
+const sections: Partial<SectionEntity>[] = classes.flatMap((c) =>
+  (c.sections || []).map((name) => ({
+    id: `${c.id}-${name}`,
+    classId: c.id!,
+    name,
+    capacity: 40,
+    schoolId: 'school_001',
+  })),
+);
+
+// Sample assignments so the Class Management page has data to show.
+const sampleAssignments: Record<string, { classTeacherId: string; roomId: string }> = {
+  'CLS-010-A': { classTeacherId: 'T-007', roomId: 'ROOM-001' },
+  'CLS-009-B': { classTeacherId: 'T-005', roomId: 'ROOM-002' },
+  'CLS-008-A': { classTeacherId: 'T-008', roomId: 'ROOM-003' },
+};
+sections.forEach((s) => {
+  const a = sampleAssignments[s.id!];
+  if (a) {
+    s.classTeacherId = a.classTeacherId;
+    s.roomId = a.roomId;
+  }
+});
 
 // ─── Periods ─────────────────────────────────────────────────────────────────
 const periods: Partial<PeriodEntity>[] = [
@@ -213,7 +240,16 @@ async function seed() {
   await upsertAll(AppDataSource.getRepository(TeacherEntity),     teachers, 'teachers    (34)');
   await upsertAll(AppDataSource.getRepository(SchoolClassEntity), classes,  'classes     (10)');
   await upsertAll(AppDataSource.getRepository(RoomEntity),        rooms,    'rooms       (10)');
+  await upsertAll(AppDataSource.getRepository(SectionEntity),     sections, `sections    (${sections.length})`);
   await upsertAll(AppDataSource.getRepository(PeriodEntity),      periods,  'periods     (11)');
+
+  // Keep the teacher back-compat flags in sync with the sample class-teacher assignments.
+  for (const [sectionId, { classTeacherId }] of Object.entries(sampleAssignments)) {
+    await AppDataSource.getRepository(TeacherEntity).update(classTeacherId, {
+      isClassTeacher: true,
+      classTeacherClassId: sectionId,
+    });
+  }
   
   process.stdout.write('Seeding academic years (1)...');
   await AppDataSource.getRepository(AcademicYearEntity).upsert(academicYears, ['name']);
@@ -251,12 +287,15 @@ async function seed() {
 
   process.stdout.write('Seeding demo students (5)...');
   const studentPasswordHash = await bcrypt.hash('12345', 12);
+  const classIdByName = Object.fromEntries(classes.map((c) => [c.name, c.id]));
+  const sectionId = (className: string, section: string) =>
+    `${classIdByName[className]}-${section}`;
   const demoStudents: Partial<StudentEntity>[] = [
-    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A" },
-    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B" },
-    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A" },
-    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C" },
-    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B" }
+    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A", sectionId: sectionId("Class 10", "A") },
+    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B", sectionId: sectionId("Class 9", "B") },
+    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A", sectionId: sectionId("Class 8", "A") },
+    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C", sectionId: sectionId("Class 7", "C") },
+    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B", sectionId: sectionId("Class 6", "B") }
   ];
   await AppDataSource.getRepository(StudentEntity).upsert(demoStudents, ['studentId']);
   console.log(' 5 rows OK');

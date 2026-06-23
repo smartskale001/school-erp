@@ -29,6 +29,9 @@ export class StudentEntity {
   @Column({ length: 10 })
   section: string;
 
+  @Column({ name: 'section_id', nullable: true, length: 40 })
+  sectionId: string;
+
   @Column({ name: 'refresh_token_hash', nullable: true, type: 'text' })
   refreshTokenHash: string;
 
