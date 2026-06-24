@@ -5,7 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
+import { TeacherEntity } from './teacher.entity';
+import { AcademicYearEntity } from './academic-year.entity';
 
 @Entity('teacher_leave_balances')
 @Unique(['teacherId', 'academicYearId'])
@@ -13,9 +19,18 @@ export class TeacherLeaveBalanceEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'teacher_id', length: 50 })
+  @ManyToOne(() => TeacherEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: TeacherEntity;
+
+  @Column({ name: 'teacher_id', length: 20 })
   teacherId: string;
 
+  @ManyToOne(() => AcademicYearEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'academic_year_id' })
+  academicYear: AcademicYearEntity;
+
+  @Index()
   @Column({ name: 'academic_year_id' })
   academicYearId: number;
 
@@ -46,6 +61,11 @@ export class TeacherLeaveBalanceEntity {
   })
   remainingLeaves: number;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

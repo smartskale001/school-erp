@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { DataSourceOptions } from 'typeorm';
+import { SchoolEntity } from './entities/school.entity';
 import { UserEntity } from './entities/user.entity';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
@@ -29,6 +30,8 @@ import { HomeworkEntity } from './entities/homework.entity';
 import { HomeworkAssignmentEntity } from './entities/homework-assignment.entity';
 import { HomeworkSubmissionEntity } from './entities/homework-submission.entity';
 import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
+import { SyllabusEntity } from './entities/syllabus.entity';
+import { SyllabusChapterEntity } from './entities/syllabus-chapter.entity';
 
 /**
  * Single source of truth for the list of registered entities. Imported by the
@@ -36,6 +39,7 @@ import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity'
  * the three never drift apart.
  */
 export const ALL_ENTITIES = [
+  SchoolEntity,
   UserEntity,
   SubjectEntity,
   TeacherEntity,
@@ -65,6 +69,8 @@ export const ALL_ENTITIES = [
   HomeworkAssignmentEntity,
   HomeworkSubmissionEntity,
   TeachingAssignmentEntity,
+  SyllabusEntity,
+  SyllabusChapterEntity,
 ];
 
 type EnvGet = (key: string) => string | undefined;
@@ -92,7 +98,9 @@ export function buildDataSourceOptions(get: EnvGet): DataSourceOptions {
     migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
     synchronize: !isProd && get('DB_SYNCHRONIZE') === 'true',
     migrationsRun: false,
-    logging: get('NODE_ENV') === 'development',
+    // Quiet by default (errors + warnings only). Set DB_LOGGING=true to see every
+    // SQL query — useful for debugging, very noisy otherwise.
+    logging: get('DB_LOGGING') === 'true' ? true : (['error', 'warn'] as ('error' | 'warn')[]),
     ssl: isProd ? { rejectUnauthorized: false } : false,
   };
 

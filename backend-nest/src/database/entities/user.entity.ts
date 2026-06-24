@@ -4,8 +4,13 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { Role } from '../../common/enums/role.enum';
+import { SchoolEntity } from './school.entity';
+import { TeacherEntity } from './teacher.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -24,9 +29,19 @@ export class UserEntity {
   @Column({ type: 'varchar', default: Role.STUDENT })
   role: Role;
 
-  @Column({ name: 'teacher_id', nullable: true, length: 50 })
+  @ManyToOne(() => TeacherEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: TeacherEntity;
+
+  @Index()
+  @Column({ name: 'teacher_id', nullable: true, length: 20 })
   teacherId: string;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

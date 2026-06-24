@@ -7,6 +7,7 @@ import * as dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../common/enums/role.enum';
+import { SchoolEntity } from './entities/school.entity';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
 import { SchoolClassEntity } from './entities/class.entity';
@@ -207,6 +208,15 @@ const academicYears: Partial<AcademicYearEntity>[] = [
   { id: 1, name: '2025-2026', startDate: '2025-04-01', endDate: '2026-03-31', isActive: true, schoolId: 'school_001' },
 ];
 
+// ─── Schools (tenant root) ───────────────────────────────────────────────────
+// Must be inserted first: every multi-tenant table FKs school_id → schools.
+const schools: Partial<SchoolEntity>[] = [
+  {
+    id: process.env.DEFAULT_SCHOOL_ID || 'school_001',
+    name: 'Javiya Schooling System',
+  },
+];
+
 async function seed() {
   console.log('\n🚀 Connecting to PostgreSQL...');
   await AppDataSource.initialize();
@@ -214,6 +224,7 @@ async function seed() {
 
   const teacherUsers = await buildTeacherUsers();
 
+  await upsertAll(AppDataSource.getRepository(SchoolEntity),      schools,  'schools     (1)');
   await upsertAll(AppDataSource.getRepository(SubjectEntity),     subjects, 'subjects    (16)');
   await upsertAll(AppDataSource.getRepository(TeacherEntity),     teachers, 'teachers    (34)');
   await upsertAll(AppDataSource.getRepository(SchoolClassEntity), classes,  'classes     (10)');

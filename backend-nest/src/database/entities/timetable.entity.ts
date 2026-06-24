@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
 
 @Entity('timetables')
 export class TimetableEntity {
@@ -14,6 +18,11 @@ export class TimetableEntity {
   @Column({ name: 'academic_year_id', nullable: true })
   academicYearId: number;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

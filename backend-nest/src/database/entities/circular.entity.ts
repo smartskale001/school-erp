@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
+import { UserEntity } from './user.entity';
 
 export enum CircularCategory {
   HOLIDAY = 'Holiday',
@@ -30,6 +35,11 @@ export class CircularEntity {
   @Column({ type: 'varchar', default: CircularCategory.GENERAL })
   category: string;
 
+  @ManyToOne(() => UserEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'created_by' })
+  creator: UserEntity;
+
+  @Index()
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
@@ -39,6 +49,11 @@ export class CircularEntity {
   @Column({ name: 'is_published', default: true })
   isPublished: boolean;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

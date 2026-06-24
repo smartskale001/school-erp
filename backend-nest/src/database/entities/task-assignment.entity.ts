@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { TaskEntity } from './task.entity';
+import { TeacherEntity } from './teacher.entity';
 
 export enum TaskAssignmentStatus {
   NOT_STARTED = 'not_started',
@@ -19,9 +24,19 @@ export class TaskAssignmentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'task_id' })
+  @ManyToOne(() => TaskEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'task_id' })
+  task: TaskEntity;
+
+  @Index()
+  @Column({ name: 'task_id', type: 'uuid' })
   taskId: string;
 
+  @ManyToOne(() => TeacherEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: TeacherEntity;
+
+  @Index()
   @Column({ name: 'teacher_id', length: 20 })
   teacherId: string;
 

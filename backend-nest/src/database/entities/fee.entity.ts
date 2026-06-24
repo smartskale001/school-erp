@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
+import { StudentEntity } from './student.entity';
 
 export enum FeeStatus {
   PENDING = 'pending',
@@ -17,7 +22,12 @@ export class FeeEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'student_id' })
+  @ManyToOne(() => StudentEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'student_id' })
+  student: StudentEntity;
+
+  @Index()
+  @Column({ name: 'student_id', type: 'uuid' })
   studentId: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -35,6 +45,11 @@ export class FeeEntity {
   @Column({ length: 255, nullable: true })
   description: string;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

@@ -7,10 +7,12 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { SchoolClassEntity } from './class.entity';
 import { TeacherEntity } from './teacher.entity';
 import { RoomEntity } from './room.entity';
+import { SchoolEntity } from './school.entity';
 
 /**
  * A class-section ("Class 1 - A") as a first-class record.
@@ -52,6 +54,11 @@ export class SectionEntity {
   @Column({ default: 40 })
   capacity: number;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

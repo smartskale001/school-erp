@@ -3,7 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
 
 @Entity('academic_years')
 export class AcademicYearEntity {
@@ -22,6 +26,11 @@ export class AcademicYearEntity {
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

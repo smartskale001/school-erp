@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SyllabusEntity } from './syllabus.entity';
 
 export enum SyllabusChapterStatus {
   PENDING = 'pending',
@@ -17,6 +21,11 @@ export class SyllabusChapterEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ManyToOne(() => SyllabusEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'syllabus_id' })
+  syllabus: SyllabusEntity;
+
+  @Index()
   @Column({ name: 'syllabus_id', type: 'uuid' })
   syllabusId: string;
 

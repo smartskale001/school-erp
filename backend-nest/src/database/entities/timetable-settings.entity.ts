@@ -1,11 +1,16 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn,
+  Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn, ManyToOne, JoinColumn,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
 
 @Entity('timetable_settings')
 export class TimetableSettingsEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
 
   @Column({ name: 'school_id', unique: true, length: 50 })
   schoolId: string;

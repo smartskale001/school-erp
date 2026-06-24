@@ -53,6 +53,13 @@ export class LeaveService {
     return user.id;
   }
 
+  /** Resolve a human student code (e.g. ST101) to the internal student UUID. */
+  private async resolveStudentUuid(humanStudentId?: string): Promise<string | null> {
+    if (!humanStudentId) return null;
+    const student = await this.studentRepo.findOne({ where: { studentId: humanStudentId } });
+    return student?.id || null;
+  }
+
   private async attachTeacherDetails<T extends { teacherId?: string }>(record: T) {
     const teachers = await this.teacherRepo.find();
     const users = await this.userRepo.find();
@@ -76,7 +83,8 @@ export class LeaveService {
   }
 
   private async attachStudentDetails<T extends { studentId?: string }>(record: T) {
-    const student = await this.studentRepo.findOne({ where: { studentId: (record as any).studentId } });
+    // record.studentId now holds the internal UUID (FK to students.id).
+    const student = await this.studentRepo.findOne({ where: { id: (record as any).studentId } });
     const studentName = student?.fullName || 'Unknown Student';
 
     return {
@@ -108,10 +116,13 @@ export class LeaveService {
 
     // SECURITY: Students may ONLY see their own leaves — never teacher leaves
     if (user.role === Role.STUDENT) {
-      const leaves = await this.leaveRepo.find({
-        where: { studentId: user.studentId, leaveOwnerType: 'student' },
-        order: { submittedAt: 'DESC' },
-      });
+      const studentUuid = await this.resolveStudentUuid(user.studentId);
+      const leaves = studentUuid
+        ? await this.leaveRepo.find({
+            where: { studentId: studentUuid, leaveOwnerType: 'student' },
+            order: { submittedAt: 'DESC' },
+          })
+        : [];
       return Promise.all(leaves.map((leave) => this.attachStudentDetails(leave)));
     }
 
@@ -162,9 +173,12 @@ export class LeaveService {
   async getMyLeaveStats(user: CurrentUser) {
     // Students have no balance quota in V1 — return a simple placeholder
     if (user.role === Role.STUDENT) {
-      const leaves = await this.leaveRepo.find({
-        where: { studentId: user.studentId, leaveOwnerType: 'student' },
-      });
+      const studentUuid = await this.resolveStudentUuid(user.studentId);
+      const leaves = studentUuid
+        ? await this.leaveRepo.find({
+            where: { studentId: studentUuid, leaveOwnerType: 'student' },
+          })
+        : [];
       const total = leaves.length;
       const approved = leaves.filter(l => l.status === LeaveStatus.APPROVED).length;
       const pending = leaves.filter(l => l.status === LeaveStatus.PENDING).length;
@@ -179,8 +193,10 @@ export class LeaveService {
   async submit(dto: SubmitLeaveDto, user: CurrentUser) {
     // ── Student leave flow (no balance check in V1) ──────────────────────────
     if (user.role === Role.STUDENT) {
+      const student = await this.studentRepo.findOne({ where: { studentId: user.studentId } });
+      if (!student) throw new NotFoundException('Student profile not found');
       const entity = this.leaveRepo.create({
-        studentId: user.studentId,
+        studentId: student.id,
         leaveOwnerType: 'student',
         leaveType: dto.leaveType,
         startDate: dto.startDate,
@@ -193,9 +209,6 @@ export class LeaveService {
         schoolId: user.schoolId || 'school_001',
       });
       const saved = await this.leaveRepo.save(entity);
-
-      // Fetch student info for notification message
-      const student = await this.studentRepo.findOne({ where: { studentId: user.studentId } });
 
       // Notify all admins/principals
       const approvers = await this.userRepo.find({
@@ -300,7 +313,7 @@ export class LeaveService {
 
     // ── Student leave: no balance deduction, notify student directly ──────────
     if (leave.leaveOwnerType === 'student') {
-      const student = await this.studentRepo.findOne({ where: { studentId: leave.studentId } });
+      const student = await this.studentRepo.findOne({ where: { id: leave.studentId } });
       if (student) {
         this.notificationsService.create(
           student.id,
@@ -380,7 +393,7 @@ export class LeaveService {
 
     // ── Student leave: notify student directly ────────────────────────────────
     if (leave.leaveOwnerType === 'student') {
-      const student = await this.studentRepo.findOne({ where: { studentId: leave.studentId } });
+      const student = await this.studentRepo.findOne({ where: { id: leave.studentId } });
       if (student) {
         this.notificationsService.create(
           student.id,

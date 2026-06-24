@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { HomeworkEntity } from './homework.entity';
 
 export enum HomeworkAssignmentStatus { PUBLISHED = 'published', CANCELLED = 'cancelled' }
 
@@ -8,6 +9,7 @@ export enum HomeworkAssignmentStatus { PUBLISHED = 'published', CANCELLED = 'can
 @Index(['homeworkId'])
 export class HomeworkAssignmentEntity {
   @PrimaryGeneratedColumn('uuid') id: string;
+  @ManyToOne(() => HomeworkEntity, { onDelete: 'CASCADE', nullable: false }) @JoinColumn({ name: 'homework_id' }) homework: HomeworkEntity;
   @Column({ name: 'homework_id', type: 'uuid' }) homeworkId: string;
   @Column({ length: 10 }) section: string;
   @Column({ type: 'timestamptz' }) deadline: Date;

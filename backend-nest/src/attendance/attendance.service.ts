@@ -1,42 +1,40 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AttendanceEntity } from '../database/entities/attendance.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 import { MarkAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
 import { AttendanceStatus } from './enums/attendance-status.enum';
 
 @Injectable()
-export class AttendanceService implements OnModuleInit {
+export class AttendanceService {
   constructor(
     @InjectRepository(AttendanceEntity)
     private readonly attendanceRepo: Repository<AttendanceEntity>,
+    @InjectRepository(StudentEntity)
+    private readonly studentRepo: Repository<StudentEntity>,
   ) {}
-
-  async onModuleInit() {
-    // Database cleanup migration: Convert any existing 'late' or 'half_day' records to 'present'
-    try {
-      await this.attendanceRepo
-        .createQueryBuilder()
-        .update(AttendanceEntity)
-        .set({ status: AttendanceStatus.PRESENT })
-        .where('status IN (:...statuses)', { statuses: ['late', 'half_day'] })
-        .execute();
-      console.log('Successfully migrated legacy attendance statuses (late/half_day -> present)');
-    } catch (err) {
-      console.error('Failed to migrate legacy attendance statuses:', err);
-    }
-  }
 
   async markAttendance(dto: MarkAttendanceDto, teacherId: string) {
     const { classId, date, section, subjectId, attendance } = dto;
 
+    // Resolve the human-readable studentIds (e.g. ST101) sent by the client into
+    // the internal student UUIDs that attendance_records.student_id now FKs to.
+    const humanIds = [...new Set(attendance.map((a) => a.studentId))];
+    const students = await this.studentRepo.find({ where: { studentId: In(humanIds) } });
+    const uuidByCode = new Map(students.map((s) => [s.studentId, s.id]));
+
     const newRecords = attendance.map((student) => {
+      const studentUuid = uuidByCode.get(student.studentId);
+      if (!studentUuid) {
+        throw new BadRequestException(`Unknown student: ${student.studentId}`);
+      }
       const record = new AttendanceEntity();
       record.classId = classId;
       record.date = date;
       record.section = section;
       record.subjectId = subjectId;
-      record.studentId = student.studentId;
+      record.studentId = studentUuid;
       record.status = student.status;
       record.remarks = student.remarks;
       record.markedByTeacherId = teacherId;
@@ -73,8 +71,16 @@ export class AttendanceService implements OnModuleInit {
   }
 
   async getStudentAttendanceSummary(studentId: string) {
-    const records = await this.attendanceRepo.find({ where: { studentId } });
-    
+    // `studentId` arrives as the human code (e.g. ST101) from the JWT/route;
+    // resolve it to the internal UUID that attendance records are keyed by.
+    const student = await this.studentRepo.findOne({ where: { studentId } });
+    const emptySummary = {
+      attendancePercentage: 0, presentDays: 0, absentDays: 0, leaveDays: 0,
+      totalClasses: 0, monthlyProgress: [], subjectWiseAttendance: [], records: [],
+    };
+    if (!student) return emptySummary;
+    const records = await this.attendanceRepo.find({ where: { studentId: student.id } });
+
     const totalClasses = records.length;
     const presentDays = records.filter(r => r.status === AttendanceStatus.PRESENT).length;
     const absentDays = records.filter(r => r.status === AttendanceStatus.ABSENT).length;

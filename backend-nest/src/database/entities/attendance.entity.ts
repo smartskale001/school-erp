@@ -6,8 +6,15 @@ import {
   UpdateDateColumn,
   Index,
   Unique,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { AttendanceStatus } from '../../attendance/enums/attendance-status.enum';
+import { SchoolClassEntity } from './class.entity';
+import { TeacherEntity } from './teacher.entity';
+import { SubjectEntity } from './subject.entity';
+import { PeriodEntity } from './period.entity';
+import { StudentEntity } from './student.entity';
 
 @Entity('attendance_records')
 @Unique(['studentId', 'date'])
@@ -15,12 +22,20 @@ export class AttendanceEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
-  @Column({ name: 'student_id', length: 50 })
-  studentId: string;
+  @ManyToOne(() => StudentEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'student_id' })
+  student: StudentEntity;
 
   @Index()
-  @Column({ name: 'class_id', length: 50 })
+  @Column({ name: 'student_id', type: 'uuid' })
+  studentId: string;
+
+  @ManyToOne(() => SchoolClassEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'class_id' })
+  class: SchoolClassEntity;
+
+  @Index()
+  @Column({ name: 'class_id', length: 20 })
   classId: string;
 
   @Column({ length: 10, nullable: true })
@@ -40,13 +55,28 @@ export class AttendanceEntity {
   @Column({ type: 'text', nullable: true })
   remarks: string;
 
-  @Column({ name: 'marked_by_teacher_id', length: 50, nullable: true })
+  @ManyToOne(() => TeacherEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'marked_by_teacher_id' })
+  markedByTeacher: TeacherEntity;
+
+  @Index()
+  @Column({ name: 'marked_by_teacher_id', length: 20, nullable: true })
   markedByTeacherId: string;
 
-  @Column({ name: 'subject_id', length: 50, nullable: true })
+  @ManyToOne(() => SubjectEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'subject_id' })
+  subject: SubjectEntity;
+
+  @Index()
+  @Column({ name: 'subject_id', length: 20, nullable: true })
   subjectId: string;
 
-  @Column({ name: 'period_id', length: 50, nullable: true })
+  @ManyToOne(() => PeriodEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'period_id' })
+  period: PeriodEntity;
+
+  @Index()
+  @Column({ name: 'period_id', length: 20, nullable: true })
   periodId: string;
 
   @CreateDateColumn({ name: 'created_at' })
