@@ -37,41 +37,19 @@ import { HomeworkEntity } from './entities/homework.entity';
 import { HomeworkAssignmentEntity } from './entities/homework-assignment.entity';
 import { HomeworkSubmissionEntity } from './entities/homework-submission.entity';
 import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
+import { buildDataSourceOptions } from './typeorm-options';
 
 dotenv.config();
 
 const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@123';
 
-const entitiesList = [
-  UserEntity, SubjectEntity, TeacherEntity, SchoolClassEntity,
-  SectionEntity, RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
-  LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
-  TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
-  AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity,
-  StudentEntity, CircularEntity, MailboxEntity, AchievementEntity, MessageEntity,
-  HomeworkEntity, HomeworkAssignmentEntity, HomeworkSubmissionEntity, TeachingAssignmentEntity
-];
-
-const AppDataSource = process.env.DATABASE_URL
-  ? new DataSource({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      entities: entitiesList,
-      synchronize: true,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    })
-  : new DataSource({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'school_erp',
-      entities: entitiesList,
-      synchronize: true,
-    });
+// Seed assumes the schema already exists (created by migrations). It connects
+// with the shared options but never synchronizes — run `npm run migration:run`
+// before seeding.
+const AppDataSource = new DataSource({
+  ...buildDataSourceOptions((k) => process.env[k]),
+  synchronize: false,
+});
 
 // ─── Subjects ────────────────────────────────────────────────────────────────
 const subjects: Partial<SubjectEntity>[] = [
