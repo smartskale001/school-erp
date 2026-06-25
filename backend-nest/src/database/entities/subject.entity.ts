@@ -1,5 +1,15 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { TeacherEntity } from './teacher.entity';
+import { SchoolEntity } from './school.entity';
 
 @Entity('subjects')
 export class SubjectEntity {
@@ -27,6 +37,11 @@ export class SubjectEntity {
   @Column('text', { array: true, name: 'grade_level', default: [] })
   gradeLevel: string[];
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

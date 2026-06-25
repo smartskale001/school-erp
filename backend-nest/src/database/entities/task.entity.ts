@@ -4,7 +4,13 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
+import { UserEntity } from './user.entity';
+import { AcademicYearEntity } from './academic-year.entity';
 
 export enum TaskStatus {
   PENDING = 'pending',
@@ -18,6 +24,11 @@ export class TaskEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ManyToOne(() => AcademicYearEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'academic_year_id' })
+  academicYear: AcademicYearEntity;
+
+  @Index()
   @Column({ name: 'academic_year_id', nullable: true })
   academicYearId: number;
 
@@ -27,9 +38,16 @@ export class TaskEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'created_by' })
+  @ManyToOne(() => UserEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'created_by' })
+  creator: UserEntity;
+
+  @Index()
+  @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
+  // Client-supplied display label (e.g. 'School Administration'), NOT a mirror of
+  // users.name — kept deliberately. created_by is the FK to the real author.
   @Column({ name: 'created_by_name', length: 255, nullable: true })
   createdByName: string;
 
@@ -54,6 +72,11 @@ export class TaskEntity {
   @Column({ name: 'file_url', type: 'text', nullable: true })
   fileUrl: string;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

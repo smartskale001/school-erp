@@ -1,4 +1,6 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { HomeworkAssignmentEntity } from './homework-assignment.entity';
+import { StudentEntity } from './student.entity';
 
 export enum HomeworkSubmissionStatus { SUBMITTED = 'submitted', REVIEWED = 'reviewed' }
 
@@ -8,7 +10,9 @@ export enum HomeworkSubmissionStatus { SUBMITTED = 'submitted', REVIEWED = 'revi
 @Index(['studentId', 'status'])
 export class HomeworkSubmissionEntity {
   @PrimaryGeneratedColumn('uuid') id: string;
+  @ManyToOne(() => HomeworkAssignmentEntity, { onDelete: 'CASCADE', nullable: false }) @JoinColumn({ name: 'homework_assignment_id' }) homeworkAssignment: HomeworkAssignmentEntity;
   @Column({ name: 'homework_assignment_id', type: 'uuid' }) homeworkAssignmentId: string;
+  @ManyToOne(() => StudentEntity, { onDelete: 'CASCADE', nullable: false }) @JoinColumn({ name: 'student_id' }) student: StudentEntity;
   @Column({ name: 'student_id', type: 'uuid' }) studentId: string;
   @Column({ name: 'submission_text', type: 'text', nullable: true }) submissionText: string;
   @Column({ name: 'file_url', type: 'text', nullable: true }) fileUrl: string;

@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { SubjectEntity } from './subject.entity';
+import { SchoolEntity } from './school.entity';
 
 @Entity('teachers')
 export class TeacherEntity {
@@ -54,6 +56,11 @@ export class TeacherEntity {
   @Column({ default: 'active', length: 20 })
   status: string;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

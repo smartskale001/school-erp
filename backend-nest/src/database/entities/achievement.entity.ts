@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SchoolEntity } from './school.entity';
+import { StudentEntity } from './student.entity';
 
 @Entity('achievements')
 export class AchievementEntity {
@@ -30,13 +35,20 @@ export class AchievementEntity {
   awardedOn: Date;
 
   // The internal UUID of the student (StudentEntity.id)
-  @Column({ name: 'student_id', length: 50 })
+  @ManyToOne(() => StudentEntity, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'student_id' })
+  student: StudentEntity;
+
+  @Index()
+  @Column({ name: 'student_id', type: 'uuid' })
   studentId: string;
 
   // Human-readable identifier stored at creation time for display
   @Column({ name: 'student_ref_id', length: 20, nullable: true })
   studentRefId: string;
 
+  // Point-in-time snapshot captured at creation (student_id is the FK source of
+  // truth). Intentionally not re-synced if the student is renamed/moved.
   @Column({ name: 'student_name', length: 255 })
   studentName: string;
 
@@ -52,6 +64,11 @@ export class AchievementEntity {
   @Column({ default: false })
   featured: boolean;
 
+  @ManyToOne(() => SchoolEntity, { onDelete: 'RESTRICT', nullable: false })
+  @JoinColumn({ name: 'school_id' })
+  school: SchoolEntity;
+
+  @Index()
   @Column({ name: 'school_id', default: 'school_001', length: 50 })
   schoolId: string;
 

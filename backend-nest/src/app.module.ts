@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { ClassesModule } from './classes/classes.module';
+import { SectionsModule } from './sections/sections.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { PeriodsModule } from './periods/periods.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -38,6 +39,7 @@ import { validate } from './config/env.validation';
     SubjectsModule,
     TeachersModule,
     ClassesModule,
+    SectionsModule,
     RoomsModule,
     PeriodsModule,
     TasksModule,

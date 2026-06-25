@@ -7,9 +7,11 @@ import * as dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../common/enums/role.enum';
+import { SchoolEntity } from './entities/school.entity';
 import { SubjectEntity } from './entities/subject.entity';
 import { TeacherEntity } from './entities/teacher.entity';
 import { SchoolClassEntity } from './entities/class.entity';
+import { SectionEntity } from './entities/section.entity';
 import { RoomEntity } from './entities/room.entity';
 import { PeriodEntity } from './entities/period.entity';
 import { UserEntity } from './entities/user.entity';
@@ -36,41 +38,19 @@ import { HomeworkEntity } from './entities/homework.entity';
 import { HomeworkAssignmentEntity } from './entities/homework-assignment.entity';
 import { HomeworkSubmissionEntity } from './entities/homework-submission.entity';
 import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
+import { buildDataSourceOptions } from './typeorm-options';
 
 dotenv.config();
 
 const DEFAULT_TEACHER_PASSWORD = process.env.TEACHER_SEED_PASSWORD || 'Teacher@123';
 
-const entitiesList = [
-  UserEntity, SubjectEntity, TeacherEntity, SchoolClassEntity,
-  RoomEntity, PeriodEntity, TaskEntity, TaskAssignmentEntity,
-  LeaveApplicationEntity, ProxyAssignmentEntity, TimetableEntity,
-  TimetableSettingsEntity, AttendanceEntity, FeeEntity, ReportEntity,
-  AcademicYearEntity, TeacherLeaveBalanceEntity, NotificationEntity, FeedbackEntity,
-  StudentEntity, CircularEntity, MailboxEntity, AchievementEntity, MessageEntity,
-  HomeworkEntity, HomeworkAssignmentEntity, HomeworkSubmissionEntity, TeachingAssignmentEntity
-];
-
-const AppDataSource = process.env.DATABASE_URL
-  ? new DataSource({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      entities: entitiesList,
-      synchronize: true,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    })
-  : new DataSource({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'school_erp',
-      entities: entitiesList,
-      synchronize: true,
-    });
+// Seed assumes the schema already exists (created by migrations). It connects
+// with the shared options but never synchronizes — run `npm run migration:run`
+// before seeding.
+const AppDataSource = new DataSource({
+  ...buildDataSourceOptions((k) => process.env[k]),
+  synchronize: false,
+});
 
 // ─── Subjects ────────────────────────────────────────────────────────────────
 const subjects: Partial<SubjectEntity>[] = [
@@ -146,17 +126,43 @@ const classes: Partial<SchoolClassEntity>[] = [
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
 const rooms: Partial<RoomEntity>[] = [
-  { id: 'ROOM-001', name: 'Room 101',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-002', name: 'Room 102',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-003', name: 'Room 103',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-004', name: 'Room 104',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-005', name: 'Room 201',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-006', name: 'Room 202',     capacity: 40,  schoolId: 'school_001' },
-  { id: 'ROOM-007', name: 'Computer Lab', capacity: 30,  schoolId: 'school_001' },
-  { id: 'ROOM-008', name: 'Science Lab',  capacity: 30,  schoolId: 'school_001' },
-  { id: 'ROOM-009', name: 'Art Room',     capacity: 35,  schoolId: 'school_001' },
-  { id: 'ROOM-010', name: 'PT Ground',    capacity: 200, schoolId: 'school_001' },
+  { id: 'ROOM-001', name: 'Room 101',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-002', name: 'Room 102',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-003', name: 'Room 103',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-004', name: 'Room 104',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-005', name: 'Room 201',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-006', name: 'Room 202',     type: 'classroom',    capacity: 40,  schoolId: 'school_001' },
+  { id: 'ROOM-007', name: 'Computer Lab', type: 'computer_lab', capacity: 30,  schoolId: 'school_001' },
+  { id: 'ROOM-008', name: 'Science Lab',  type: 'lab',          capacity: 30,  schoolId: 'school_001' },
+  { id: 'ROOM-009', name: 'Art Room',     type: 'other',        capacity: 35,  schoolId: 'school_001' },
+  { id: 'ROOM-010', name: 'PT Ground',    type: 'hall',         capacity: 200, schoolId: 'school_001' },
 ];
+
+// ─── Sections (class-sections) ───────────────────────────────────────────────
+// Derived from the classes above so every "Class X - Y" exists as a real row.
+const sections: Partial<SectionEntity>[] = classes.flatMap((c) =>
+  (c.sections || []).map((name) => ({
+    id: `${c.id}-${name}`,
+    classId: c.id!,
+    name,
+    capacity: 40,
+    schoolId: 'school_001',
+  })),
+);
+
+// Sample assignments so the Class Management page has data to show.
+const sampleAssignments: Record<string, { classTeacherId: string; roomId: string }> = {
+  'CLS-010-A': { classTeacherId: 'T-007', roomId: 'ROOM-001' },
+  'CLS-009-B': { classTeacherId: 'T-005', roomId: 'ROOM-002' },
+  'CLS-008-A': { classTeacherId: 'T-008', roomId: 'ROOM-003' },
+};
+sections.forEach((s) => {
+  const a = sampleAssignments[s.id!];
+  if (a) {
+    s.classTeacherId = a.classTeacherId;
+    s.roomId = a.roomId;
+  }
+});
 
 // ─── Periods ─────────────────────────────────────────────────────────────────
 const periods: Partial<PeriodEntity>[] = [
@@ -202,6 +208,15 @@ const academicYears: Partial<AcademicYearEntity>[] = [
   { id: 1, name: '2025-2026', startDate: '2025-04-01', endDate: '2026-03-31', isActive: true, schoolId: 'school_001' },
 ];
 
+// ─── Schools (tenant root) ───────────────────────────────────────────────────
+// Must be inserted first: every multi-tenant table FKs school_id → schools.
+const schools: Partial<SchoolEntity>[] = [
+  {
+    id: process.env.DEFAULT_SCHOOL_ID || 'school_001',
+    name: 'Javiya Schooling System',
+  },
+];
+
 async function seed() {
   console.log('\n🚀 Connecting to PostgreSQL...');
   await AppDataSource.initialize();
@@ -209,11 +224,21 @@ async function seed() {
 
   const teacherUsers = await buildTeacherUsers();
 
+  await upsertAll(AppDataSource.getRepository(SchoolEntity),      schools,  'schools     (1)');
   await upsertAll(AppDataSource.getRepository(SubjectEntity),     subjects, 'subjects    (16)');
   await upsertAll(AppDataSource.getRepository(TeacherEntity),     teachers, 'teachers    (34)');
   await upsertAll(AppDataSource.getRepository(SchoolClassEntity), classes,  'classes     (10)');
   await upsertAll(AppDataSource.getRepository(RoomEntity),        rooms,    'rooms       (10)');
+  await upsertAll(AppDataSource.getRepository(SectionEntity),     sections, `sections    (${sections.length})`);
   await upsertAll(AppDataSource.getRepository(PeriodEntity),      periods,  'periods     (11)');
+
+  // Keep the teacher back-compat flags in sync with the sample class-teacher assignments.
+  for (const [sectionId, { classTeacherId }] of Object.entries(sampleAssignments)) {
+    await AppDataSource.getRepository(TeacherEntity).update(classTeacherId, {
+      isClassTeacher: true,
+      classTeacherClassId: sectionId,
+    });
+  }
   
   process.stdout.write('Seeding academic years (1)...');
   await AppDataSource.getRepository(AcademicYearEntity).upsert(academicYears, ['name']);
@@ -251,12 +276,15 @@ async function seed() {
 
   process.stdout.write('Seeding demo students (5)...');
   const studentPasswordHash = await bcrypt.hash('12345', 12);
+  const classIdByName = Object.fromEntries(classes.map((c) => [c.name, c.id]));
+  const sectionId = (className: string, section: string) =>
+    `${classIdByName[className]}-${section}`;
   const demoStudents: Partial<StudentEntity>[] = [
-    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A" },
-    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B" },
-    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A" },
-    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C" },
-    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B" }
+    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A", sectionId: sectionId("Class 10", "A") },
+    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B", sectionId: sectionId("Class 9", "B") },
+    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A", sectionId: sectionId("Class 8", "A") },
+    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C", sectionId: sectionId("Class 7", "C") },
+    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B", sectionId: sectionId("Class 6", "B") }
   ];
   await AppDataSource.getRepository(StudentEntity).upsert(demoStudents, ['studentId']);
   console.log(' 5 rows OK');

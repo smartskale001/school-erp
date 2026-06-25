@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { AcademicYearEntity } from '../database/entities/academic-year.entity';
 import { TeacherEntity } from '../database/entities/teacher.entity';
 import { TeacherLeaveBalanceEntity } from '../database/entities/teacher-leave-balance.entity';
+import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
+import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 
 @Injectable()
 export class AcademicYearsService {
@@ -33,8 +35,8 @@ export class AcademicYearsService {
     return active;
   }
 
-  async create(dto: any) {
-    const { name, startDate, endDate, schoolId = 'school_001' } = dto;
+  async create(dto: CreateAcademicYearDto, schoolId = 'school_001') {
+    const { name, startDate, endDate } = dto;
 
     if (new Date(startDate) >= new Date(endDate)) {
       throw new BadRequestException('End date must be after start date');
@@ -45,10 +47,14 @@ export class AcademicYearsService {
       throw new BadRequestException('Academic year with this name already exists');
     }
 
+    // Explicit field mapping — never spread client input. isActive and schoolId
+    // are server-controlled (activation happens only via the /activate route).
     const year = this.repo.create({
-      ...dto,
+      name,
+      startDate,
+      endDate,
       schoolId,
-      isActive: false, // Default to inactive
+      isActive: false,
     });
 
     return this.repo.save(year);
@@ -86,7 +92,7 @@ export class AcademicYearsService {
     return { message: `Academic year ${year.name} activated successfully and leave balances reset.` };
   }
 
-  async update(id: number, dto: any) {
+  async update(id: number, dto: UpdateAcademicYearDto) {
     const year = await this.repo.findOne({ where: { id } });
     if (!year) throw new NotFoundException('Academic year not found');
 

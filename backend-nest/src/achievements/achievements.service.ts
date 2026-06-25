@@ -43,9 +43,10 @@ export class AchievementsService {
 
     const saved = await this.repo.save(achievement);
 
-    // Send notification to the specific student
+    // Send notification to the specific student (by internal UUID — notifications
+    // are keyed by recipient id, and students are looked up by students.id).
     await this.notificationsService.create(
-      dto.studentId,
+      student.id,
       'New Achievement Added! 🏆',
       `Congratulations! "${saved.title}" has been added to your profile.`,
       'achievement',

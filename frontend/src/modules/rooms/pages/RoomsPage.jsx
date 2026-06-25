@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, LayoutGrid } from 'lucide-react';
-import { Card } from '@/core/components/Card';
-import { SectionHeader } from '@/core/components/SectionHeader';
-import { Input } from '@/core/components/Input';
+import { Plus, Pencil, Trash2, LayoutGrid, Home } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -10,15 +8,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-
-const INITIAL_ROOMS = [
-  { id: 'R-001', name: 'Room 101', capacity: 40, type: 'classroom' },
-  { id: 'R-002', name: 'Room 102', capacity: 40, type: 'classroom' },
-  { id: 'R-003', name: 'Lab A', capacity: 30, type: 'lab' },
-  { id: 'R-004', name: 'Lab B', capacity: 30, type: 'lab' },
-  { id: 'R-005', name: 'Computer Lab', capacity: 25, type: 'computer_lab' },
-  { id: 'R-006', name: 'Library', capacity: 50, type: 'library' },
-];
+import { apiRequest } from '@/core/api/client';
+import { API_ENDPOINTS } from '@/core/api/endpoints';
+import { Input } from '@/core/components/Input';
+import { SectionHeader } from '@/core/components/SectionHeader';
 
 const ROOM_TYPES = [
   { value: 'classroom', label: 'Classroom' },
@@ -38,72 +31,110 @@ const TYPE_CLS = {
   other: 'bg-gray-50 text-gray-600',
 };
 
-function loadRooms() {
-  try {
-    const saved = localStorage.getItem('erp_rooms');
-    if (saved) return JSON.parse(saved);
-  } catch {}
-  return INITIAL_ROOMS;
-}
-
-function saveRooms(rooms) {
-  localStorage.setItem('erp_rooms', JSON.stringify(rooms));
-}
-
 export default function RoomsPage() {
-  const [rooms, setRooms] = useState(loadRooms);
+  const [rooms, setRooms] = useState([]);
+  const [sections, setSections] = useState([]);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
   const [type, setType] = useState('classroom');
+  const [homeroomSectionId, setHomeroomSectionId] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const [roomList, sectionList] = await Promise.all([
+        apiRequest(API_ENDPOINTS.rooms.list),
+        apiRequest(API_ENDPOINTS.sections.list).catch(() => []),
+      ]);
+      setRooms(Array.isArray(roomList) ? roomList : []);
+      setSections(Array.isArray(sectionList) ? sectionList : []);
+    } catch {
+      setError('Failed to load rooms.');
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = rooms.filter((r) =>
     r.name.toLowerCase().includes(query.toLowerCase()) ||
-    r.type.includes(query.toLowerCase())
+    (r.type || '').includes(query.toLowerCase())
   );
 
+  // section currently using a given room as its homeroom
+  const homeroomFor = (roomId) => sections.find((s) => s.roomId === roomId);
+
   const resetForm = () => {
-    setName(''); setCapacity(''); setType('classroom'); setEditingId(null);
+    setName(''); setCapacity(''); setType('classroom');
+    setHomeroomSectionId(''); setEditingId(null); setError('');
   };
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    let updated;
-    if (editingId) {
-      updated = rooms.map((r) =>
-        r.id === editingId ? { ...r, name: name.trim(), capacity: parseInt(capacity) || 0, type } : r
-      );
-    } else {
-      const newRoom = {
-        id: `R-${String(rooms.length + 1).padStart(3, '0')}`,
-        name: name.trim(),
-        capacity: parseInt(capacity) || 0,
-        type,
-      };
-      updated = [...rooms, newRoom];
+  // Point the chosen section at this room as homeroom, releasing any section
+  // that previously used it (one homeroom per room).
+  const assignHomeroom = async (roomId, sectionId) => {
+    const previous = sections.find((s) => s.roomId === roomId);
+    if (previous && previous.id !== sectionId) {
+      await apiRequest(API_ENDPOINTS.sections.update(previous.id), {
+        method: 'PATCH',
+        body: JSON.stringify({ roomId: null }),
+      });
     }
-    setRooms(updated);
-    saveRooms(updated);
-    setIsOpen(false);
-    resetForm();
+    if (sectionId) {
+      await apiRequest(API_ENDPOINTS.sections.update(sectionId), {
+        method: 'PATCH',
+        body: JSON.stringify({ roomId }),
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setError('');
+    try {
+      let roomId = editingId;
+      if (editingId) {
+        await apiRequest(API_ENDPOINTS.rooms.update(editingId), {
+          method: 'PATCH',
+          body: JSON.stringify({ name: name.trim(), type, capacity: parseInt(capacity) || 0 }),
+        });
+      } else {
+        roomId = `R-${Date.now().toString(36)}`;
+        await apiRequest(API_ENDPOINTS.rooms.create, {
+          method: 'POST',
+          body: JSON.stringify({ id: roomId, name: name.trim(), type, capacity: parseInt(capacity) || 0 }),
+        });
+      }
+      await assignHomeroom(roomId, homeroomSectionId);
+      await load();
+      setIsOpen(false);
+      resetForm();
+    } catch (e) {
+      setError(e.message || 'Failed to save room.');
+    }
   };
 
   const handleEdit = (room) => {
     setEditingId(room.id);
     setName(room.name);
-    setCapacity(String(room.capacity));
-    setType(room.type);
+    setCapacity(String(room.capacity ?? ''));
+    setType(room.type || 'classroom');
+    setHomeroomSectionId(homeroomFor(room.id)?.id || '');
+    setError('');
     setIsOpen(true);
   };
 
-  const handleDelete = (id) => {
-    const updated = rooms.filter((r) => r.id !== id);
-    setRooms(updated);
-    saveRooms(updated);
-    setConfirmDelete(null);
+  const handleDelete = async (id) => {
+    try {
+      // section.roomId is set to NULL by the DB FK on delete.
+      await apiRequest(API_ENDPOINTS.rooms.remove(id), { method: 'DELETE' });
+      await load();
+      setConfirmDelete(null);
+    } catch (e) {
+      setError(e.message || 'Failed to delete room.');
+    }
   };
 
   const typeLabel = (t) => ROOM_TYPES.find((r) => r.value === t)?.label || t;
@@ -113,8 +144,14 @@ export default function RoomsPage() {
       <SectionHeader
         className="mb-4"
         title="Rooms"
-        description="Manage classrooms and facilities available for scheduling"
+        description="Manage classrooms and facilities, and assign a homeroom to a class-section"
       />
+
+      {error && (
+        <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
 
       <div className="mb-4 flex gap-3 items-center">
         <button
@@ -134,37 +171,45 @@ export default function RoomsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((room) => (
-          <div key={room.id} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <LayoutGrid size={18} className="text-gray-500" />
+        {filtered.map((room) => {
+          const homeroom = homeroomFor(room.id);
+          return (
+            <div key={room.id} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <LayoutGrid size={18} className="text-gray-500" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{room.name}</div>
+                    <div className="text-xs text-gray-400">{room.id}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-900 text-sm">{room.name}</div>
-                  <div className="text-xs text-gray-400">{room.id}</div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(room)} className="text-blue-500 hover:text-blue-700">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => setConfirmDelete(room)} className="text-red-400 hover:text-red-600">
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleEdit(room)} className="text-blue-500 hover:text-blue-700">
-                  <Pencil size={14} />
-                </button>
-                <button onClick={() => setConfirmDelete(room)} className="text-red-400 hover:text-red-600">
-                  <Trash2 size={14} />
-                </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_CLS[room.type] || 'bg-gray-50 text-gray-600'}`}>
+                  {typeLabel(room.type)}
+                </span>
+                {room.capacity > 0 && (
+                  <span className="text-xs text-gray-500">Capacity: {room.capacity}</span>
+                )}
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${TYPE_CLS[room.type] || 'bg-gray-50 text-gray-600'}`}>
-                {typeLabel(room.type)}
-              </span>
-              {room.capacity > 0 && (
-                <span className="text-xs text-gray-500">Capacity: {room.capacity}</span>
+              {homeroom && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1 w-fit">
+                  <Home size={12} /> Homeroom: {homeroom.className} - {homeroom.name}
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {filtered.length === 0 && (
           <div className="col-span-3 text-center py-12 text-gray-400 text-sm">No rooms found.</div>
         )}
@@ -178,7 +223,7 @@ export default function RoomsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Room Name *</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101" />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101 / Lab A" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Type</label>
@@ -199,6 +244,22 @@ export default function RoomsPage() {
                 placeholder="e.g. 40"
                 min="0"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Homeroom for (optional)</label>
+              <select
+                value={homeroomSectionId}
+                onChange={(e) => setHomeroomSectionId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+              >
+                <option value="">— Not a homeroom (shared facility) —</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>{s.className} - {s.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Assign this room as the home classroom of a class-section. Leave empty for shared rooms (labs, library).
+              </p>
             </div>
           </div>
           <DialogFooter className="flex gap-2 justify-end">

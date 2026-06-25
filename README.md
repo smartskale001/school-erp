@@ -186,10 +186,17 @@ Roles are stored in the `users` table and encoded in the JWT. Use `POST /auth/us
 
 ### Backend
 ```sh
-npm run start:dev   # watch mode
-npm run build       # compile to dist/
-npm run start       # run compiled dist/main.js
-npm run seed        # seed reference data and teacher login accounts into PostgreSQL
+npm run start:dev          # watch mode
+npm run build              # compile to dist/
+npm run start              # run compiled dist/main.js
+npm run seed               # seed reference data and teacher login accounts into PostgreSQL
+
+# Schema migrations (TypeORM — schema is NOT auto-synced)
+npm run migration:generate -- src/database/migrations/<Name>  # diff entities → new migration
+npm run migration:run                                         # apply pending migrations (dev, ts-node)
+npm run migration:run:prod                                    # apply pending migrations (prod, compiled dist)
+npm run migration:revert                                      # roll back the last migration
+npm run migration:show                                        # list applied / pending migrations
 ```
 
 ### Frontend
@@ -202,10 +209,15 @@ npm run lint        # ESLint
 
 ---
 
-## Deployment (Azure)
+## Deployment (AWS)
 
-1. Provision **Azure Database for PostgreSQL** and copy the connection string.
-2. Set `NODE_ENV=production` and all `DB_*` / `JWT_*` env vars in your App Service.
-3. Build and deploy `backend-nest/dist/` to **Azure App Service** (Node 20 LTS).
-4. Deploy `frontend/dist/` to **Vercel** with `VITE_API_BASE_URL` pointing to the App Service URL.
-5. Run `npm run seed` once after first deploy to populate reference data.
+1. Provision **Amazon RDS for PostgreSQL** and copy the connection details.
+2. Set `NODE_ENV=production` and all `DB_*` (or `DATABASE_URL`) / `JWT_*` env vars on the host
+   (Elastic Beanstalk / ECS / EC2). Do **not** set `DB_SYNCHRONIZE` — schema auto-sync is
+   force-disabled in production; migrations are the source of truth.
+3. Build: `npm run build` (produces `backend-nest/dist/`, Node 20 LTS).
+4. **Apply the schema as an explicit deploy step — before starting the app and before seeding:**
+   `npm run migration:run:prod` (runs migrations from compiled `dist/`; it does not run on app boot).
+5. Start the backend: `npm start`.
+6. Deploy `frontend/dist/` to **Vercel** with `VITE_API_BASE_URL` pointing to the backend URL.
+7. Run `npm run seed` **once** after the first migration to populate reference data.

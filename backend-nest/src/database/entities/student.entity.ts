@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { SectionEntity } from './section.entity';
 
 @Entity('students')
 export class StudentEntity {
@@ -28,6 +32,14 @@ export class StudentEntity {
 
   @Column({ length: 10 })
   section: string;
+
+  @ManyToOne(() => SectionEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'section_id' })
+  section_ref: SectionEntity;
+
+  @Index()
+  @Column({ name: 'section_id', nullable: true, length: 40 })
+  sectionId: string;
 
   @Column({ name: 'refresh_token_hash', nullable: true, type: 'text' })
   refreshTokenHash: string;

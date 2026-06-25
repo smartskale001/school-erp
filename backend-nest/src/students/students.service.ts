@@ -11,13 +11,17 @@ export class StudentsService {
   ) {}
 
   async getStudentsByClass(classId: string) {
-    let students = await this.studentRepo.find({
-      order: { fullName: 'ASC' }
+    // Prefer filtering by the real section FK. If no students are linked to
+    // this section yet (e.g. legacy/mock ids), fall back to returning all
+    // students so existing flows (attendance) keep working.
+    const scoped = await this.studentRepo.find({
+      where: { sectionId: classId },
+      order: { fullName: 'ASC' },
     });
-    
-    if (students.length === 0) {
-      return [];
-    }
+
+    const students = scoped.length
+      ? scoped
+      : await this.studentRepo.find({ order: { fullName: 'ASC' } });
 
     return students.map((s) => ({
       id: s.id,
@@ -26,6 +30,11 @@ export class StudentsService {
       className: s.className,
       section: s.section,
     }));
+  }
+
+  /** Live student count for a section (used by class-management). */
+  countBySection(sectionId: string) {
+    return this.studentRepo.count({ where: { sectionId } });
   }
 
   async findAll() {

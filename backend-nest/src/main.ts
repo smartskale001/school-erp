@@ -10,7 +10,14 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Quiet bootstrap logs by default (no per-route "Mapped ..." / InstanceLoader
+  // spam). Set NEST_LOG=verbose to get Nest's full log output when debugging.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger:
+      process.env.NEST_LOG === 'verbose'
+        ? ['error', 'warn', 'log', 'debug', 'verbose']
+        : ['error', 'warn'],
+  });
   
   // Enable compression
   app.use(compression());

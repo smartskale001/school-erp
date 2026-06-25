@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsString, IsOptional, validateSync, IsNumber } from 'class-validator';
+import { IsEnum, IsString, IsOptional, validateSync, IsNumber, IsIn } from 'class-validator';
 
 class EnvironmentVariables {
   @IsEnum(['development', 'production', 'test'])
@@ -33,6 +33,12 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   DB_NAME?: string;
+
+  // Local-dev opt-in for TypeORM schema auto-sync. Off unless set to 'true';
+  // force-disabled in production regardless of value.
+  @IsIn(['true', 'false'])
+  @IsOptional()
+  DB_SYNCHRONIZE?: string;
 
   @IsString()
   JWT_ACCESS_SECRET: string;
