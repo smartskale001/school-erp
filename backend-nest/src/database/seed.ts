@@ -29,6 +29,8 @@ import { AcademicYearEntity } from './entities/academic-year.entity';
 import { TeacherLeaveBalanceEntity } from './entities/teacher-leave-balance.entity';
 import { FeedbackEntity } from './entities/feedback.entity';
 import { StudentEntity } from './entities/student.entity';
+import { Gender } from '../students/enums/gender.enum';
+import { EnrollmentStatus } from '../students/enums/enrollment-status.enum';
 
 import { CircularEntity } from './entities/circular.entity';
 import { MailboxEntity } from './entities/mailbox.entity';
@@ -241,7 +243,15 @@ async function seed() {
   }
   
   process.stdout.write('Seeding academic years (1)...');
-  await AppDataSource.getRepository(AcademicYearEntity).upsert(academicYears, ['name']);
+  // orIgnore (ON CONFLICT DO NOTHING) instead of upsert: upserting on `name`
+  // regenerates the @PrimaryGeneratedColumn id and tries to mutate the PK, which
+  // teacher_leave_balances FKs → violation. Keep the explicit id:1 stable.
+  await AppDataSource.getRepository(AcademicYearEntity)
+    .createQueryBuilder()
+    .insert()
+    .values(academicYears)
+    .orIgnore()
+    .execute();
   console.log(' 1 rows OK');
   
   // SEED LEAVE BALANCES
@@ -274,22 +284,49 @@ async function seed() {
   await AppDataSource.getRepository(UserEntity).upsert(teacherUsers, ['email']);
   console.log(' 34 rows OK');
 
-  process.stdout.write('Seeding demo students (5)...');
-  const studentPasswordHash = await bcrypt.hash('12345', 12);
-  const classIdByName = Object.fromEntries(classes.map((c) => [c.name, c.id]));
-  const sectionId = (className: string, section: string) =>
-    `${classIdByName[className]}-${section}`;
-  const demoStudents: Partial<StudentEntity>[] = [
-    { studentId: "ST101", fullName: "Rahul Sharma", passwordHash: studentPasswordHash, className: "Class 10", section: "A", sectionId: sectionId("Class 10", "A") },
-    { studentId: "ST102", fullName: "Priya Verma", passwordHash: studentPasswordHash, className: "Class 9", section: "B", sectionId: sectionId("Class 9", "B") },
-    { studentId: "ST103", fullName: "Aman Singh", passwordHash: studentPasswordHash, className: "Class 8", section: "A", sectionId: sectionId("Class 8", "A") },
-    { studentId: "ST104", fullName: "Sneha Gupta", passwordHash: studentPasswordHash, className: "Class 7", section: "C", sectionId: sectionId("Class 7", "C") },
-    { studentId: "ST105", fullName: "Arjun Mehta", passwordHash: studentPasswordHash, className: "Class 6", section: "B", sectionId: sectionId("Class 6", "B") }
-  ];
-  await AppDataSource.getRepository(StudentEntity).upsert(demoStudents, ['studentId']);
-  console.log(' 5 rows OK');
+  // Clean slate: drop all existing students (and their dependent rows via CASCADE)
+  // so demo data is deterministic on every run. Removes the legacy ST10x students.
+  await AppDataSource.query('TRUNCATE TABLE "students" CASCADE');
 
-  console.log(`\n🎉 Seed complete! Default teacher password: ${DEFAULT_TEACHER_PASSWORD}\n`);
+  process.stdout.write('Seeding students (80)...');
+  const studentPasswordHash = await bcrypt.hash('Student@123', 12);
+  // Admission-number year matches the runtime generator (active academic year start).
+  const admissionYear = new Date(academicYears[0].startDate!).getFullYear();
+  const demoSections = [
+    { classId: 'CLS-005', className: 'Class 5', section: 'A' },
+    { classId: 'CLS-005', className: 'Class 5', section: 'B' },
+    { classId: 'CLS-006', className: 'Class 6', section: 'A' },
+    { classId: 'CLS-007', className: 'Class 7', section: 'A' },
+  ];
+  const classBirthYear: Record<string, number> = { 'Class 5': 2014, 'Class 6': 2013, 'Class 7': 2012 };
+  const firstNames = ['Aarav','Vivaan','Aditya','Vihaan','Arjun','Sai','Reyansh','Krishna','Ishaan','Rohan','Ananya','Diya','Aadhya','Ira','Pari','Riya','Sara','Myra','Kiara','Navya'];
+  const lastNames = ['Sharma','Verma','Gupta','Singh','Mehta','Patel','Reddy','Nair','Iyer','Joshi'];
+
+  let seq = 0;
+  const demoStudents: Partial<StudentEntity>[] = [];
+  for (const sec of demoSections) {
+    for (let roll = 1; roll <= 20; roll++) {
+      seq += 1;
+      const fullName = `${firstNames[(seq - 1) % firstNames.length]} ${lastNames[(seq - 1) % lastNames.length]}`;
+      demoStudents.push({
+        studentId: `JS-${admissionYear}-${String(seq).padStart(4, '0')}`,
+        fullName,
+        passwordHash: studentPasswordHash,
+        className: sec.className,
+        section: sec.section,
+        sectionId: `${sec.classId}-${sec.section}`,
+        rollNo: roll,
+        gender: seq % 2 === 0 ? Gender.FEMALE : Gender.MALE,
+        dateOfBirth: `${classBirthYear[sec.className]}-06-15`,
+        status: EnrollmentStatus.ACTIVE,
+        mustChangePassword: false,
+      });
+    }
+  }
+  await AppDataSource.getRepository(StudentEntity).insert(demoStudents);
+  console.log(` ${demoStudents.length} rows OK`);
+
+  console.log(`\n🎉 Seed complete! Teacher password: ${DEFAULT_TEACHER_PASSWORD} | Student password: Student@123\n`);
   await AppDataSource.destroy();
 }
 

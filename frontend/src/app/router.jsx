@@ -27,6 +27,7 @@ const TeachersPage           = React.lazy(() => import('../modules/timetable/pag
 const SubjectsPage           = React.lazy(() => import('../modules/timetable/pages/SubjectsPage'));
 const RoomsPage              = React.lazy(() => import('../modules/rooms/pages/RoomsPage'));
 const ClassManagementPage    = React.lazy(() => import('../modules/class-management/pages/ClassManagementPage'));
+const StudentEnrollmentPage  = React.lazy(() => import('../modules/students/pages/StudentEnrollmentPage'));
 const ClassSectionDetailPage = React.lazy(() => import('../modules/class-management/pages/ClassSectionDetailPage'));
 const TasksListPage          = React.lazy(() => import('../modules/tasks/pages/TasksListPage'));
 const CreateTaskPage         = React.lazy(() => import('../modules/tasks/pages/CreateTaskPage'));
@@ -108,6 +109,9 @@ export default function AppRouter() {
               element={<DenyRole deniedRoles={TEACHER_DENIED}><RoomsPage /></DenyRole>}
             />
             <Route path="/timetable" element={<TimetablePage />} />
+
+            {/* Student Enrollment — admin, principal & coordinator */}
+            <Route path="/students" element={['admin', 'principal', 'coordinator'].includes(role) ? <StudentEnrollmentPage /> : <Navigate to="/" replace />} />
 
             {/* Class Management — principal & admin only */}
             <Route path="/class-management" element={['admin', 'principal'].includes(role) ? <ClassManagementPage /> : <Navigate to="/" replace />} />

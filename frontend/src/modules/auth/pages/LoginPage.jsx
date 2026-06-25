@@ -103,15 +103,15 @@ export default function LoginPage() {
           ) : (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Student ID
+                Admission Number
               </label>
               <input
                 type="text"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value.toUpperCase())}
                 required
-                maxLength={5}
-                placeholder="ST101"
+                maxLength={20}
+                placeholder="JS-2025-0001"
                 className="w-full bg-gray-100 rounded-lg px-4 py-2.5 text-sm border-0 outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
               />
             </div>

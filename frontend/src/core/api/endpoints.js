@@ -49,6 +49,12 @@ export const API_ENDPOINTS = {
     update: (id) => `/sections/${id}`,
     remove: (id) => `/sections/${id}`,
   },
+  students: {
+    list: '/students',
+    get: (id) => `/students/${id}`,
+    create: '/students',
+    byClass: (classId) => `/students/class/${classId}`,
+  },
   periods: {
     list: '/periods',
     get: (id) => `/periods/${id}`,
