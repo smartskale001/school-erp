@@ -48,6 +48,27 @@ export function saveWorkingDays(days) {
 }
 
 /**
+ * Keeps only grid entries whose dimensions match the current periods × days,
+ * so a grid published under a different layout doesn't render misaligned.
+ * Shared by TimetablePage and the student dashboard.
+ */
+export function normalizeGridsForPeriods(savedGrids, periods, days) {
+  if (!savedGrids || typeof savedGrids !== 'object') return {};
+  const normalized = {};
+  for (const [key, grid] of Object.entries(savedGrids)) {
+    if (
+      Array.isArray(grid) &&
+      grid.length === periods.length &&
+      Array.isArray(grid[0]) &&
+      grid[0].length === days.length
+    ) {
+      normalized[key] = grid;
+    }
+  }
+  return normalized;
+}
+
+/**
  * Converts the period slots stored in localStorage (erp_period_slots)
  * to the timetable period format used by TimetablePage and ReportsPage.
  */

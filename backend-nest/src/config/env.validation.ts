@@ -56,6 +56,11 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   FIREBASE_SERVICE_ACCOUNT?: string;
+
+  // Prefix for auto-generated student Admission Numbers, e.g. "JS" → JS-2026-0001.
+  @IsString()
+  @IsOptional()
+  ADMISSION_PREFIX?: string;
 }
 
 export function validate(config: Record<string, any>) {

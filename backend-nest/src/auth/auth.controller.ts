@@ -90,6 +90,23 @@ export class AuthController {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
+  @Post('student/change-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Student changes own password' })
+  changeStudentPassword(
+    @CurrentUser() user: { id: string },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changeStudentPassword(
+      user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
+
   @Post('users/:id/role')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)

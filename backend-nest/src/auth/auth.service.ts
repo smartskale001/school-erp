@@ -88,8 +88,27 @@ export class AuthService {
       user: { ...safeStudent, role: Role.STUDENT },
       accessToken,
       refreshToken,
-      role: Role.STUDENT
+      role: Role.STUDENT,
+      mustChangePassword: student.mustChangePassword,
     };
+  }
+
+  async changeStudentPassword(
+    studentId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const student = await this.studentRepo.findOne({ where: { id: studentId } });
+    if (!student) throw new NotFoundException('Student not found');
+
+    const valid = await bcrypt.compare(currentPassword, student.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await this.studentRepo.update(studentId, {
+      passwordHash,
+      mustChangePassword: false,
+    });
   }
 
   async refresh(rawToken: string) {
