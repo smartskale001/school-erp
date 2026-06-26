@@ -8,6 +8,7 @@ import AppLayout from '../core/layouts/AppLayout';
 import LoginPage from '../modules/auth/pages/LoginPage';
 import SignupPage from '../modules/auth/pages/SignupPage';
 
+
 // ─── All dashboard/feature pages: lazy-loaded per route ──────────────────
 // This is the PRIMARY fix for ERR_INSUFFICIENT_RESOURCES.
 // Previously all 16 pages were eagerly imported, causing Vite dev-mode to fire
@@ -46,10 +47,14 @@ const TeacherMailboxPage     = React.lazy(() => import('../modules/mailbox/pages
 const AchievementManagementPage = React.lazy(() => import('../modules/achievements/pages/AchievementManagementPage'));
 const AttendanceMarkingPage  = React.lazy(() => import('../modules/attendance/pages/AttendanceMarkingPage'));
 const TeacherHomeworkPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkPage'));
+const QuizListPage = React.lazy(() => import('../modules/quiz/pages/QuizListPage'));
+const CreateQuizPage = React.lazy(() => import('../modules/quiz/pages/CreateQuiz'));
+const QuizDetailPage = React.lazy(() => import('../modules/quiz/pages/QuizDetailPage'));
 const TeacherHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkDetailPage'));
 const StudentHomeworkPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkPage'));
 const StudentHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkDetailPage'));
 const HomeworkMonitoringPage = React.lazy(() => import('../modules/homework/pages/HomeworkMonitoringPage'));
+
 const TeachingAssignmentsPage = React.lazy(() => import('../modules/homework/pages/TeachingAssignmentsPage'));
 
 // Shared route-level loading spinner
@@ -73,7 +78,7 @@ const STUDENT_DENIED = ['student'];
 
 export default function AppRouter() {
   const { user, role, loading } = useAuth();
-
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -81,7 +86,7 @@ export default function AppRouter() {
       </div>
     );
   }
-
+  
   return (
     <Router>
       <Suspense fallback={<PageLoader />}>
@@ -122,6 +127,11 @@ export default function AppRouter() {
             <Route path="/homework/:homeworkId" element={role === 'teacher' ? <TeacherHomeworkDetailPage /> : <Navigate to="/" replace />} />
             <Route path="/homework/monitor" element={['admin', 'principal', 'coordinator'].includes(role) ? <HomeworkMonitoringPage /> : <Navigate to="/" replace />} />
             <Route path="/teaching-assignments" element={role === 'admin' ? <TeachingAssignmentsPage /> : <Navigate to="/" replace />} />
+    
+            {/* Quiz — teachers only */}
+            <Route path="/quizzes" element={role === 'teacher' ? <QuizListPage /> : <Navigate to="/" replace />} />
+            <Route path="/quizzes/create" element={role === 'teacher' ? <CreateQuizPage /> : <Navigate to="/" replace />} />
+            <Route path="/quizzes/:id" element={role === 'teacher' ? <QuizDetailPage /> : <Navigate to="/" replace />} />
 
             {/* Tasks — teachers see their own, admins/principals see all. Students denied. */}
             <Route
