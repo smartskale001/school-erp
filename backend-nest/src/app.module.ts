@@ -29,6 +29,7 @@ import { HomeworkModule } from './homework/homework.module';
 import { TeachingAssignmentsModule } from './teaching-assignments/teaching-assignments.module';
 import { AppController } from './app.controller';
 import { validate } from './config/env.validation';
+import { QuizModule } from './quiz/quiz.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { validate } from './config/env.validation';
     MessagesModule,
     HomeworkModule,
     TeachingAssignmentsModule,
+    QuizModule
   ],
   controllers: [AppController],
 })

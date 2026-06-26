@@ -32,7 +32,10 @@ import { HomeworkSubmissionEntity } from './entities/homework-submission.entity'
 import { TeachingAssignmentEntity } from './entities/teaching-assignment.entity';
 import { SyllabusEntity } from './entities/syllabus.entity';
 import { SyllabusChapterEntity } from './entities/syllabus-chapter.entity';
-
+import { QuizAnswerEntity } from './entities/quiz-answer.entity';
+import { QuizAttemptEntity } from './entities/quiz-attempt.entity';
+import { QuizEntity } from './entities/quiz.entity';
+import { QuizQuestionEntity } from './entities/quiz-question.entity';
 /**
  * Single source of truth for the list of registered entities. Imported by the
  * Nest TypeORM module, the standalone CLI DataSource, and the seed script so
@@ -40,6 +43,10 @@ import { SyllabusChapterEntity } from './entities/syllabus-chapter.entity';
  */
 export const ALL_ENTITIES = [
   SchoolEntity,
+  QuizAnswerEntity,
+  QuizAttemptEntity,
+  QuizQuestionEntity,
+  QuizEntity,
   UserEntity,
   SubjectEntity,
   TeacherEntity,
