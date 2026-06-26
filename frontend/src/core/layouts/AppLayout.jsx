@@ -65,6 +65,7 @@ const navSections = [
       { label: "Students",   icon: GraduationCap,  path: "/students", roles: ["admin", "principal", "coordinator"] },
       { label: "Tasks",      icon: ClipboardList,  path: "/tasks" },
       { label: "Homework",   icon: NotebookPen,    path: "/homework", roles: ["teacher"] },
+      { label: "Quizzes", icon: ClipboardCheck, path: "/quizzes", roles: ["teacher"] },
       { label: "Homework Monitor", icon: NotebookPen, path: "/homework/monitor", roles: ["admin", "principal", "coordinator"] },
       { label: "Leave",      icon: CalendarOff,    path: "/leave" },
       { label: "Circulars",  icon: Megaphone,      path: "/circulars", roles: ["admin", "principal"] },
