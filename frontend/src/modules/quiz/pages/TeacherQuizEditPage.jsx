@@ -1,4 +1,3 @@
-// src/pages/teacher/quizzes/TeacherQuizEditPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getQuizById, addQuestion, publishQuiz } from '../services/teacherquizService';
@@ -6,23 +5,8 @@ import { Card } from '@/core/components/Card';
 import { Button } from '@/core/components/Button';
 import { Input } from '@/core/components/Input';
 import { Textarea} from '@/core/components/Textarea';
-
-// --- Placeholder components if yours don't exist ---
-
-const Label = ({ children, className = '', ...props }) => (
-  <label className={`block text-sm font-medium text-gray-700 mb-1 ${className}`} {...props}>
-    {children}
-  </label>
-);
-
-
-const Select = ({ className = '', ...props }) => (
-  <select
-    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`}
-    {...props}
-  />
-);
-// --- END PLACEHOLDER COMPONENTS ---
+import {Label} from '../components/Label'
+import {Select} from '../components/Select'
 import { Plus, Save, Eye, AlertCircle, Hash, Clock, BookOpen, Building2, GraduationCap, Edit } from 'lucide-react';
 
 export default function TeacherQuizEditPage() {

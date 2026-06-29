@@ -1,4 +1,3 @@
-// src/pages/teacher/quizzes/TeacherCreateQuizPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createQuiz } from '../services/teacherquizService';
@@ -6,16 +5,7 @@ import { Card } from '@/core/components/Card';
 import { Button } from '@/core/components/Button';
 import { Input } from '@/core/components/Input';
 import { useEffect } from 'react';
-// --- Placeholder components if yours don't exist ---
-
-
-const Label = ({ children, className = '', ...props }) => (
-  <label className={`block text-sm font-medium text-gray-700 mb-1 ${className}`} {...props}>
-    {children}
-  </label>
-);
-// --- END PLACEHOLDER COMPONENTS ---
-
+import {Label} from '../components/Label'
 import { Calendar, Clock, Hash, BookOpen, Building2, GraduationCap, HelpCircle, AlertCircle } from 'lucide-react';
 
 export default function TeacherCreateQuizPage() {

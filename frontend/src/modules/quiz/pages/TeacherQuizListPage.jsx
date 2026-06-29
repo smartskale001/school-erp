@@ -1,4 +1,3 @@
-// src/pages/teacher/quizzes/TeacherQuizListPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyQuizzes, publishQuiz } from '../services/teacherquizService';
@@ -6,10 +5,10 @@ import { Card } from '@/core/components/Card';
 import { Button } from '@/core/components/Button';
 import { SectionHeader } from '@/core/components/SectionHeader';
 import { Edit, Eye, Upload, Clock, Play, CheckCircle2, Users } from 'lucide-react';
-import { useAuth } from '@/core/context/AuthContext';
+// import { useAuth } from '@/core/context/AuthContext';
 
 export default function TeacherQuizListPage() {
-  const { userProfile } = useAuth(); // Assuming this provides teacher info
+  // const { userProfile } = useAuth(); // Assuming this provides teacher info
   const navigate = useNavigate();
 
   const [quizzes, setQuizzes] = useState([]);

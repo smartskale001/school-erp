@@ -1,4 +1,3 @@
-// src/pages/student/quizzes/StudentQuizListPage.jsx
 import { Play, Clock, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

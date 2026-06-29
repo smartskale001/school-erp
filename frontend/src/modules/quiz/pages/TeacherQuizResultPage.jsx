@@ -1,12 +1,8 @@
-// src/pages/teacher/quizzes/TeacherQuizResultPage.jsx (or TeacherQuizResultsPage.jsx if you renamed it)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getQuizResults } from '../services/teacherQuizService'; // Assuming you add this function to the service
 import { Card } from '@/core/components/Card';
 import { Button } from '@/core/components/Button';
-// --- Remove Table import ---
-// import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/core/components/Table'; // Assuming you have these
-import { SectionHeader } from '@/core/components/SectionHeader';
 import { getQuizById } from '../services/teacherQuizService'; // Re-use getQuizById to get quiz title
 import { AlertCircle, ArrowLeft, GraduationCap, BarChart3 } from 'lucide-react';
 
