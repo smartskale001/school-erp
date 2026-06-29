@@ -1,13 +1,3 @@
-/**
- * QuizStudentController (Student-facing)
- *
- * Handles student operations on quizzes:
- *  - Browse live quizzes (correct answers hidden)
- *  - Join / start / answer / submit quizzes
- *  - View results after submission
- *
- * Every route requires JwtAuthGuard (authenticated student).
- */
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,19 +5,23 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { QuizAttemptService } from './quiz-attempt.service';
 import { JoinQuizDto } from './dto/join-quiz.dto';
 import { SaveAnswerDto } from './dto/save-answer.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 
 @ApiTags('Quiz (Student)')
 @ApiBearerAuth()
 @Controller('student/quizzes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.STUDENT)
 export class QuizStudentController {
   constructor(private readonly attemptService: QuizAttemptService) {}
 
-  /** List all LIVE quizzes available for students to attempt */
-  @ApiOperation({ summary: 'List all live quizzes available to students' })
+  /** ✅ UPDATED: List all LIVE quizzes WITH attempt status for the current student */
+  @ApiOperation({ summary: 'List all live quizzes (with attempt status)' })
   @Get()
-  async getStudentQuizzes() {
-    return this.attemptService.getStudentQuizzes();
+  async getStudentQuizzes(@CurrentUser() user: any) {
+    return this.attemptService.getStudentQuizzesWithStatus(user);
   }
 
   /** Get quiz details (correct answers are stripped from the response) */

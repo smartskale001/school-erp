@@ -1,76 +1,109 @@
-/**
- * QuizResultService
- *
- * Scoring engine for quiz attempts.
- * Compares student answers against correct answers and assigns marks.
- * Supports three question types: mcq_single, true_false, fill_blank.
- */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { QuizAttemptEntity } from '../database/entities/quiz-attempt.entity';
+import { Repository, In } from 'typeorm';
+import { QuizAttemptEntity, AttemptStatus } from '../database/entities/quiz-attempt.entity';
 import { QuizAnswerEntity } from '../database/entities/quiz-answer.entity';
 import { QuizQuestionEntity } from '../database/entities/quiz-question.entity';
+import { QuizEntity } from '../database/entities/quiz.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 
 @Injectable()
 export class QuizResultService {
   constructor(
+    @InjectRepository(QuizAttemptEntity)
+    private attemptRepository: Repository<QuizAttemptEntity>,
     @InjectRepository(QuizAnswerEntity)
     private answerRepository: Repository<QuizAnswerEntity>,
     @InjectRepository(QuizQuestionEntity)
     private questionRepository: Repository<QuizQuestionEntity>,
-    @InjectRepository(QuizAttemptEntity)
-    private attemptRepository: Repository<QuizAttemptEntity>,
+    @InjectRepository(QuizEntity)
+    private quizRepository: Repository<QuizEntity>,
+    @InjectRepository(StudentEntity)
+    private studentRepository: Repository<StudentEntity>,
   ) {}
 
-  /**
-   * Calculate score for a completed quiz attempt.
-   *
-   * Grading rules:
-   *  - mcq_single / true_false → exact string match
-   *  - fill_blank → case-insensitive match against any accepted answer
-   *  - Unanswered questions (givenAnswer === null) get 0 marks
-   *
-   * Persists per-question marksObtained + total score on the attempt.
-   */
   async calculateScore(attemptId: string) {
     const attempt = await this.attemptRepository.findOne({ where: { id: attemptId } });
-    if (!attempt) throw new NotFoundException('Attempt not found');
-
-    const answers = await this.answerRepository.find({ where: { attemptId } });
-    const questions = await this.questionRepository.find({
-      where: { quizId: attempt.quizId },
-    });
-
-    let totalScore = 0;
-
-    for (const answer of answers) {
-      const question = questions.find((q) => q.id === answer.questionId);
-      if (!question || answer.givenAnswer === null) continue;
-
-      let correct = false;
-
-      if (question.questionType === 'mcq_single' || question.questionType === 'true_false') {
-        correct = answer.givenAnswer === question.correctAnswer;
-      }
-
-      if (question.questionType === 'fill_blank') {
-        const accepted = (question.correctAnswer as string[]).map((a) => a.toLowerCase().trim());
-        const given = String(answer.givenAnswer || '').toLowerCase().trim();
-        correct = accepted.includes(given);
-      }
-
-      const marks = correct ? Number(question.marks) : 0;
-      answer.marksObtained = marks;
-      totalScore += marks;
+    if (!attempt) {
+      throw new NotFoundException('Quiz attempt not found for scoring.');
     }
 
-    await this.answerRepository.save(answers);
+    const questions = await this.questionRepository.find({ where: { quizId: attempt.quizId } });
+    const questionMap = new Map(questions.map(q => [q.id, q]));
+
+    const answers = await this.answerRepository.find({ where: { attemptId } });
+    let totalScore = 0;
+    let totalMarks = 0;
+
+    for (const answer of answers) {
+      const question = questionMap.get(answer.questionId);
+      if (question) {
+        totalMarks += parseFloat(question.marks as any);
+        if (this.answersMatch(answer.givenAnswer, question.correctAnswer)) {
+          totalScore += parseFloat(question.marks as any);
+          answer.marksObtained = parseFloat(question.marks as any);
+        } else {
+          answer.marksObtained = 0;
+        }
+        await this.answerRepository.save(answer);
+      }
+    }
+
     attempt.score = totalScore;
     await this.attemptRepository.save(attempt);
 
-    const totalMarks = questions.reduce((sum, q) => sum + Number(q.marks), 0);
+    return {
+      score: totalScore,
+      total: totalMarks,
+    };
+  }
 
-    return { score: totalScore, total: totalMarks };
+  async getQuizResults(quizId: string, teacherUser: any) {
+    const quiz = await this.quizRepository.findOne({
+      where: { id: quizId, teacherId: teacherUser.teacherId },
+    });
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found or does not belong to the teacher.');
+    }
+
+    const attempts = await this.attemptRepository.find({
+      where: { quizId, status: AttemptStatus.SUBMITTED },
+      order: { submittedAt: 'ASC' },
+    });
+
+    if (attempts.length === 0) {
+      return [];
+    }
+
+    const studentIds = [...new Set(attempts.map(attempt => attempt.studentId))];
+    const students = await this.studentRepository.find({
+      where: { studentId: In(studentIds) },
+    });
+    const studentMap = new Map(students.map(student => [student.id, student]));
+
+    const questions = await this.questionRepository.find({ where: { quizId } });
+    const totalPossible = questions.reduce((sum, q) => sum + parseFloat(q.marks as any), 0);
+
+    return attempts.map(attempt => {
+      const student = studentMap.get(attempt.studentId);
+      return {
+        attemptId: attempt.id,
+        studentId: attempt.studentId,
+        studentName: student ? student.fullName : 'Unknown Student',
+        rollNumber: student ? String(student.rollNo) : 'N/A',
+        score: attempt.score,
+        total: totalPossible,
+        submittedAt: attempt.submittedAt,
+        status: attempt.status,
+      };
+    });
+  }
+
+  private answersMatch(given: string | string[] | null, correct: string | string[]): boolean {
+     if (!given) return false;
+    if (Array.isArray(given) && Array.isArray(correct)) {
+      return given.length === correct.length && given.every(a => (correct as string[]).includes(a));
+    }
+    return given === correct;
   }
 }

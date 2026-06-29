@@ -13,6 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { QuizEntity } from '../database/entities/quiz.entity';
 import { QuizQuestionEntity } from '../database/entities/quiz-question.entity';
 import { QuizAttemptEntity } from '../database/entities/quiz-attempt.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 import { QuizAnswerEntity } from '../database/entities/quiz-answer.entity';
 import { QuizController } from './quiz.controller';
 import { QuizStudentController } from './quiz-student.controller';
@@ -26,7 +27,8 @@ import { QuizResultService } from './quiz-result.service';
       QuizEntity, 
       QuizQuestionEntity, 
       QuizAttemptEntity, 
-      QuizAnswerEntity
+      QuizAnswerEntity,
+      StudentEntity
     ]),
   ],
   controllers: [QuizController, QuizStudentController],

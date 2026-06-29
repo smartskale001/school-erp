@@ -9,6 +9,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QuizEntity, QuizStatus } from '../database/entities/quiz.entity';
+import { StudentEntity } from '../database/entities/student.entity';
 import { QuizAttemptEntity, AttemptStatus } from '../database/entities/quiz-attempt.entity';
 import { QuizAnswerEntity } from '../database/entities/quiz-answer.entity';
 import { QuizQuestionEntity } from '../database/entities/quiz-question.entity';
@@ -27,6 +28,8 @@ export class QuizAttemptService {
     private answerRepository: Repository<QuizAnswerEntity>,
     @InjectRepository(QuizQuestionEntity)
     private questionRepository: Repository<QuizQuestionEntity>,
+    @InjectRepository(StudentEntity)
+    private studentRepository: Repository<StudentEntity>,
     private resultService: QuizResultService,
   ) {}
 
@@ -52,24 +55,62 @@ export class QuizAttemptService {
     return { ...quiz, questions: safeQuestions };
   }
 
+/** List all LIVE quizzes enriched with the student's attempt status */
+async getStudentQuizzesWithStatus(user: any) {
+  const quizzes = await this.quizRepository.find({
+    where: { status: QuizStatus.LIVE },
+    order: { scheduledAt: 'ASC' },
+  });
+
+  // Get all attempts for this student
+  const attempts = await this.attemptRepository.find({
+    where: { studentId: user.studentId || user.id },
+  });
+
+  // Map for quick lookup
+  const attemptMap = new Map(
+    attempts.map((attempt) => [attempt.quizId, attempt]),
+  );
+
+  // Enrich quizzes with attempt status
+  return quizzes.map((quiz) => {
+    const attempt = attemptMap.get(quiz.id);
+    return {
+      ...quiz,
+      attemptStatus: attempt ? attempt.status : null, // null | 'in_progress' | 'submitted'
+      attemptId: attempt?.id || null,
+      submittedAt: attempt?.submittedAt || null,
+    };
+  });
+}
+
   /** Register student interest — creates an IN_PROGRESS attempt (one per student per quiz) */
   async joinQuiz(quizId: string, dto: JoinQuizDto, user: any) {
     const quiz = await this.quizRepository.findOne({ where: { id: quizId } });
     if (!quiz) throw new NotFoundException('Quiz not found');
 
+    if (!dto.rollNumber) throw new BadRequestException('Roll number is required');
+
+    const student = await this.studentRepository.findOne({
+      where: { rollNo: Number(dto.rollNumber) },
+    });
+    if (!student) throw new BadRequestException('Student not found with this roll number');
+
     const existing = await this.attemptRepository.findOne({
-      where: { quizId, studentId: user.studentId || user.id },
+      where: { quizId, studentId: student.id },
     });
     if (existing) throw new BadRequestException('Already joined this quiz');
 
     const attempt = this.attemptRepository.create({
       quizId,
-      studentId: user.studentId || user.id,
+      studentId: student.id,
       status: AttemptStatus.IN_PROGRESS,
+      startedAt: new Date(),
       schoolId: user.schoolId || 'school_001',
     });
 
-    return this.attemptRepository.save(attempt);
+    await this.attemptRepository.save(attempt);
+    return { attemptId: attempt.id, startedAt: attempt.startedAt };
   }
 
   /**
@@ -77,6 +118,7 @@ export class QuizAttemptService {
    * (auto-joins if student hasn't explicitly joined).
    */
   async startQuiz(quizId: string, user: any) {
+
     const quiz = await this.quizRepository.findOne({ where: { id: quizId } });
     if (!quiz) throw new NotFoundException('Quiz not found');
 
@@ -118,8 +160,9 @@ export class QuizAttemptService {
       await this.answerRepository.save(answerRows);
     }
 
-    attempt.startedAt = new Date();
-    await this.attemptRepository.save(attempt);
+if (!attempt.startedAt) {
+  attempt.startedAt = new Date();
+}    await this.attemptRepository.save(attempt);
 
     return { attemptId: attempt.id, startedAt: attempt.startedAt };
   }

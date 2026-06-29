@@ -4,6 +4,7 @@
  * Handles teacher operations on quizzes:
  *  - Create / list / view / publish quizzes
  *  - Add questions to draft quizzes
+ *  - View results for quizzes
  *
  * Every route requires JwtAuthGuard (authenticated teacher).
  */
@@ -12,15 +13,24 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { QuizService } from './quiz.service';
+import { QuizResultService } from './quiz-result.service'; // Import the new service
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
+
 
 @ApiTags('Quiz (Teacher)')
 @ApiBearerAuth()
 @Controller('quizzes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.TEACHER)
 export class QuizController {
-  constructor(private readonly quizService: QuizService) {}
+  constructor(
+    private readonly quizService: QuizService,
+    private readonly resultService: QuizResultService, // Inject the new service
+  ) {}
 
   /** Create a new quiz in DRAFT status */
   @ApiOperation({ summary: 'Create a draft quiz' })
@@ -58,5 +68,15 @@ export class QuizController {
     @Body() dto: CreateQuestionDto,
   ) {
     return this.quizService.addQuestion(quizId, dto);
+  }
+
+  /**
+   * Get all student results for a quiz created by the logged-in teacher.
+   * Includes student details, score, total, and submission time.
+   */
+  @ApiOperation({ summary: 'Get all student results for a quiz' })
+  @Get(':id/results')
+  async getQuizResults(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.resultService.getQuizResults(id, user);
   }
 }
