@@ -6,7 +6,7 @@ import { Card } from '@/core/components/Card';
 import { Input } from '@/core/components/Input';
 import { SectionHeader } from '@/core/components/SectionHeader';
 import { toast } from 'sonner';
-import { getQuizById, addQuestion, publishQuiz } from '../services/quizService';
+import { getQuizById, addQuestion, publishQuiz } from '../services/teacherquizService';
 
 const questionTypeLabels = {
   mcq_single: { label: 'MCQ', icon: HelpCircle },

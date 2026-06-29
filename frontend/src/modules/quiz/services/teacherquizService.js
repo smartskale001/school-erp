@@ -15,6 +15,10 @@ export async function createQuiz(data) {
   });
 }
 
+export async function getQuizResults(quizId) {
+  return apiRequest(`/quizzes/${quizId}/results`);
+}
+
 export async function addQuestion(quizId, data) {
   return apiRequest(`/quizzes/${quizId}/questions`, {
     method: 'POST',
