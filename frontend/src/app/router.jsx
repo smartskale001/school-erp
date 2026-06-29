@@ -1,61 +1,160 @@
-import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
-import { useAuth } from '../core/context/AuthContext';
-import AppLayout from '../core/layouts/AppLayout';
+import { useAuth } from "../core/context/AuthContext";
+import AppLayout from "../core/layouts/AppLayout";
 
 // ─── Auth pages: kept eager — they're tiny and load on app start ───────────
-import LoginPage from '../modules/auth/pages/LoginPage';
-import SignupPage from '../modules/auth/pages/SignupPage';
-
+import LoginPage from "../modules/auth/pages/LoginPage";
+import SignupPage from "../modules/auth/pages/SignupPage";
 
 // ─── All dashboard/feature pages: lazy-loaded per route ──────────────────
 // This is the PRIMARY fix for ERR_INSUFFICIENT_RESOURCES.
 // Previously all 16 pages were eagerly imported, causing Vite dev-mode to fire
 // 100+ simultaneous ESM HTTP requests at startup, exhausting browser limits.
 // With React.lazy() each page's module tree is only fetched when first visited.
-const DashboardPage          = React.lazy(() => import('../modules/dashboard/pages/DashboardPage'));
-const StudentDashboard       = React.lazy(() => import('../modules/dashboard/pages/StudentDashboard'));
-const StudentCircularsPage   = React.lazy(() => import('../modules/student/pages/StudentCircularsPage'));
-const StudentMailboxPage     = React.lazy(() => import('../modules/student/pages/StudentMailboxPage'));
-const StudentAttendancePage  = React.lazy(() => import('../modules/student/pages/StudentAttendancePage'));
-const StudentAchievementsPage = React.lazy(() => import('../modules/student/pages/StudentAchievementsPage'));
-const StudentLeavePage       = React.lazy(() => import('../modules/student/pages/StudentLeavePage'));
-const TimetablePage          = React.lazy(() => import('../modules/timetable/pages/TimetablePage'));
-const OrganizationSettingsPage = React.lazy(() => import('../modules/timetable/pages/OrganizationSettingsPage'));
-const ClassTimeManagement    = React.lazy(() => import('../modules/timetable/pages/ClassTimeManagement'));
-const TeachersPage           = React.lazy(() => import('../modules/timetable/pages/TeachersPage'));
-const SubjectsPage           = React.lazy(() => import('../modules/timetable/pages/SubjectsPage'));
-const RoomsPage              = React.lazy(() => import('../modules/rooms/pages/RoomsPage'));
-const ClassManagementPage    = React.lazy(() => import('../modules/class-management/pages/ClassManagementPage'));
-const StudentEnrollmentPage  = React.lazy(() => import('../modules/students/pages/StudentEnrollmentPage'));
-const ClassSectionDetailPage = React.lazy(() => import('../modules/class-management/pages/ClassSectionDetailPage'));
-const TasksListPage          = React.lazy(() => import('../modules/tasks/pages/TasksListPage'));
-const CreateTaskPage         = React.lazy(() => import('../modules/tasks/pages/CreateTaskPage'));
-const TaskDetailPage         = React.lazy(() => import('../modules/tasks/pages/TaskDetailPage'));
-const LeaveListPage          = React.lazy(() => import('../modules/leave/pages/LeaveListPage'));
-const LeaveApplicationPage   = React.lazy(() => import('../modules/leave/pages/LeaveApplicationPage'));
-const ProxyAssignmentPage    = React.lazy(() => import('../modules/leave/pages/ProxyAssignmentPage'));
-const ReportsPage            = React.lazy(() => import('../modules/reports/pages/ReportsPage'));
-const ProfilePage            = React.lazy(() => import('../modules/profile/pages/ProfilePage'));
-const AcademicYearsPage      = React.lazy(() => import('../modules/settings/pages/AcademicYearsPage'));
-const PrincipalFeedbackPage  = React.lazy(() => import('../modules/feedback/pages/PrincipalFeedbackPage'));
-const TeacherFeedbackPage    = React.lazy(() => import('../modules/feedback/pages/TeacherFeedbackPage'));
-const CircularManagementPage = React.lazy(() => import('../modules/circulars/pages/CircularManagementPage'));
-const MailboxManagementPage  = React.lazy(() => import('../modules/mailbox/pages/MailboxManagementPage'));
-const TeacherMailboxPage     = React.lazy(() => import('../modules/mailbox/pages/TeacherMailboxPage'));
-const AchievementManagementPage = React.lazy(() => import('../modules/achievements/pages/AchievementManagementPage'));
-const AttendanceMarkingPage  = React.lazy(() => import('../modules/attendance/pages/AttendanceMarkingPage'));
-const TeacherHomeworkPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkPage'));
-const QuizListPage = React.lazy(() => import('../modules/quiz/pages/QuizListPage'));
-const CreateQuizPage = React.lazy(() => import('../modules/quiz/pages/CreateQuiz'));
-const QuizDetailPage = React.lazy(() => import('../modules/quiz/pages/QuizDetailPage'));
-const TeacherHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/TeacherHomeworkDetailPage'));
-const StudentHomeworkPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkPage'));
-const StudentHomeworkDetailPage = React.lazy(() => import('../modules/homework/pages/StudentHomeworkDetailPage'));
-const HomeworkMonitoringPage = React.lazy(() => import('../modules/homework/pages/HomeworkMonitoringPage'));
+const DashboardPage = React.lazy(
+  () => import("../modules/dashboard/pages/DashboardPage"),
+);
+const StudentDashboard = React.lazy(
+  () => import("../modules/dashboard/pages/StudentDashboard"),
+);
+const StudentQuizListPage = React.lazy(
+  () => import("../modules/student/pages/StudentQuizList"),
+);
+const StudentQuizAttemptPage = React.lazy(
+  () => import("../modules/student/pages/StudentQuizAttemptPage"),
+);
+const StudentQuizResultPage = React.lazy(
+  () => import("../modules/student/pages/StudentQuizResultPage"),
+);
+const StudentCircularsPage = React.lazy(
+  () => import("../modules/student/pages/StudentCircularsPage"),
+);
+const StudentMailboxPage = React.lazy(
+  () => import("../modules/student/pages/StudentMailboxPage"),
+);
+const StudentAttendancePage = React.lazy(
+  () => import("../modules/student/pages/StudentAttendancePage"),
+);
+const StudentAchievementsPage = React.lazy(
+  () => import("../modules/student/pages/StudentAchievementsPage"),
+);
+const StudentLeavePage = React.lazy(
+  () => import("../modules/student/pages/StudentLeavePage"),
+);
+const TimetablePage = React.lazy(
+  () => import("../modules/timetable/pages/TimetablePage"),
+);
+const OrganizationSettingsPage = React.lazy(
+  () => import("../modules/timetable/pages/OrganizationSettingsPage"),
+);
+const ClassTimeManagement = React.lazy(
+  () => import("../modules/timetable/pages/ClassTimeManagement"),
+);
+const TeachersPage = React.lazy(
+  () => import("../modules/timetable/pages/TeachersPage"),
+);
+const SubjectsPage = React.lazy(
+  () => import("../modules/timetable/pages/SubjectsPage"),
+);
+const RoomsPage = React.lazy(() => import("../modules/rooms/pages/RoomsPage"));
+const ClassManagementPage = React.lazy(
+  () => import("../modules/class-management/pages/ClassManagementPage"),
+);
+const StudentEnrollmentPage = React.lazy(
+  () => import("../modules/students/pages/StudentEnrollmentPage"),
+);
+const ClassSectionDetailPage = React.lazy(
+  () => import("../modules/class-management/pages/ClassSectionDetailPage"),
+);
+const TasksListPage = React.lazy(
+  () => import("../modules/tasks/pages/TasksListPage"),
+);
+const CreateTaskPage = React.lazy(
+  () => import("../modules/tasks/pages/CreateTaskPage"),
+);
+const TaskDetailPage = React.lazy(
+  () => import("../modules/tasks/pages/TaskDetailPage"),
+);
+const LeaveListPage = React.lazy(
+  () => import("../modules/leave/pages/LeaveListPage"),
+);
+const LeaveApplicationPage = React.lazy(
+  () => import("../modules/leave/pages/LeaveApplicationPage"),
+);
+const ProxyAssignmentPage = React.lazy(
+  () => import("../modules/leave/pages/ProxyAssignmentPage"),
+);
+const ReportsPage = React.lazy(
+  () => import("../modules/reports/pages/ReportsPage"),
+);
+const ProfilePage = React.lazy(
+  () => import("../modules/profile/pages/ProfilePage"),
+);
+const AcademicYearsPage = React.lazy(
+  () => import("../modules/settings/pages/AcademicYearsPage"),
+);
+const PrincipalFeedbackPage = React.lazy(
+  () => import("../modules/feedback/pages/PrincipalFeedbackPage"),
+);
+const TeacherFeedbackPage = React.lazy(
+  () => import("../modules/feedback/pages/TeacherFeedbackPage"),
+);
+const CircularManagementPage = React.lazy(
+  () => import("../modules/circulars/pages/CircularManagementPage"),
+);
+const MailboxManagementPage = React.lazy(
+  () => import("../modules/mailbox/pages/MailboxManagementPage"),
+);
+const TeacherMailboxPage = React.lazy(
+  () => import("../modules/mailbox/pages/TeacherMailboxPage"),
+);
+const AchievementManagementPage = React.lazy(
+  () => import("../modules/achievements/pages/AchievementManagementPage"),
+);
+const AttendanceMarkingPage = React.lazy(
+  () => import("../modules/attendance/pages/AttendanceMarkingPage"),
+);
+const TeacherHomeworkPage = React.lazy(
+  () => import("../modules/homework/pages/TeacherHomeworkPage"),
+);
+const TeacherQuizListPage = React.lazy(
+  () => import("../modules/quiz/pages/TeacherQuizListPage"),
+);
+const TeacherCreateQuizPage = React.lazy(
+  () => import("../modules/quiz/pages/TeacherCreateQuiz"),
+);
+const TeacherQuizEditPage = React.lazy(
+  () => import("../modules/quiz/pages/TeacherQuizEditPage"),
+);
+const TeacherQuizDetailPage = React.lazy(
+  () => import("../modules/quiz/pages/TeacherQuizDetailPage"),
+);
+const TeacherQuizResultPage = React.lazy(
+  () => import("../modules/quiz/pages/TeacherQuizResultPage"),
+);
+const TeacherHomeworkDetailPage = React.lazy(
+  () => import("../modules/homework/pages/TeacherHomeworkDetailPage"),
+);
+const StudentHomeworkPage = React.lazy(
+  () => import("../modules/homework/pages/StudentHomeworkPage"),
+);
+const StudentHomeworkDetailPage = React.lazy(
+  () => import("../modules/homework/pages/StudentHomeworkDetailPage"),
+);
+const HomeworkMonitoringPage = React.lazy(
+  () => import("../modules/homework/pages/HomeworkMonitoringPage"),
+);
 
-const TeachingAssignmentsPage = React.lazy(() => import('../modules/homework/pages/TeachingAssignmentsPage'));
+const TeachingAssignmentsPage = React.lazy(
+  () => import("../modules/homework/pages/TeachingAssignmentsPage"),
+);
 
 // Shared route-level loading spinner
 function PageLoader() {
@@ -73,12 +172,12 @@ function DenyRole({ deniedRoles, children }) {
   return children;
 }
 
-const TEACHER_DENIED = ['teacher'];
-const STUDENT_DENIED = ['student'];
+const TEACHER_DENIED = ["teacher"];
+const STUDENT_DENIED = ["student"];
 
 export default function AppRouter() {
   const { user, role, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -86,91 +185,252 @@ export default function AppRouter() {
       </div>
     );
   }
-  
+
   return (
     <Router>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-          <Route path="/signup" element={user ? <Navigate to="/" replace /> : <SignupPage />} />
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/" replace /> : <LoginPage />}
+          />
+          <Route
+            path="/signup"
+            element={user ? <Navigate to="/" replace /> : <SignupPage />}
+          />
 
-          <Route element={user ? <AppLayout /> : <Navigate to="/login" replace />}>
+          <Route
+            element={user ? <AppLayout /> : <Navigate to="/login" replace />}
+          >
             {/* Dashboard — all roles */}
-            <Route path="/" element={role === 'student' ? <StudentDashboard /> : <DashboardPage />} />
+            <Route
+              path="/"
+              element={
+                role === "student" ? <StudentDashboard /> : <DashboardPage />
+              }
+            />
 
             {/* Timetable setup — visible to all, but Teachers/Subjects/Rooms restricted */}
-            <Route path="/organization" element={<OrganizationSettingsPage />} />
+            <Route
+              path="/organization"
+              element={<OrganizationSettingsPage />}
+            />
             <Route path="/class-time" element={<ClassTimeManagement />} />
             <Route
               path="/teachers"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><TeachersPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={TEACHER_DENIED}>
+                  <TeachersPage />
+                </DenyRole>
+              }
             />
             <Route
               path="/subjects"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><SubjectsPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={TEACHER_DENIED}>
+                  <SubjectsPage />
+                </DenyRole>
+              }
             />
             <Route
               path="/rooms"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><RoomsPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={TEACHER_DENIED}>
+                  <RoomsPage />
+                </DenyRole>
+              }
             />
             <Route path="/timetable" element={<TimetablePage />} />
 
             {/* Student Enrollment — admin, principal & coordinator */}
-            <Route path="/students" element={['admin', 'principal', 'coordinator'].includes(role) ? <StudentEnrollmentPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/students"
+              element={
+                ["admin", "principal", "coordinator"].includes(role) ? (
+                  <StudentEnrollmentPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Class Management — principal & admin only */}
-            <Route path="/class-management" element={['admin', 'principal'].includes(role) ? <ClassManagementPage /> : <Navigate to="/" replace />} />
-            <Route path="/class-management/:sectionId" element={['admin', 'principal'].includes(role) ? <ClassSectionDetailPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/class-management"
+              element={
+                ["admin", "principal"].includes(role) ? (
+                  <ClassManagementPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/class-management/:sectionId"
+              element={
+                ["admin", "principal"].includes(role) ? (
+                  <ClassSectionDetailPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Homework */}
-            <Route path="/homework" element={role === 'teacher' ? <TeacherHomeworkPage /> : <Navigate to="/" replace />} />
-            <Route path="/homework/:homeworkId" element={role === 'teacher' ? <TeacherHomeworkDetailPage /> : <Navigate to="/" replace />} />
-            <Route path="/homework/monitor" element={['admin', 'principal', 'coordinator'].includes(role) ? <HomeworkMonitoringPage /> : <Navigate to="/" replace />} />
-            <Route path="/teaching-assignments" element={role === 'admin' ? <TeachingAssignmentsPage /> : <Navigate to="/" replace />} />
-    
+            <Route
+              path="/homework"
+              element={
+                role === "teacher" ? (
+                  <TeacherHomeworkPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/homework/:homeworkId"
+              element={
+                role === "teacher" ? (
+                  <TeacherHomeworkDetailPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/homework/monitor"
+              element={
+                ["admin", "principal", "coordinator"].includes(role) ? (
+                  <HomeworkMonitoringPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/teaching-assignments"
+              element={
+                role === "admin" ? (
+                  <TeachingAssignmentsPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+
             {/* Quiz — teachers only */}
-            <Route path="/quizzes" element={role === 'teacher' ? <QuizListPage /> : <Navigate to="/" replace />} />
-            <Route path="/quizzes/create" element={role === 'teacher' ? <CreateQuizPage /> : <Navigate to="/" replace />} />
-            <Route path="/quizzes/:id" element={role === 'teacher' ? <QuizDetailPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/quizzes"
+              element={
+                role === "teacher" ? (
+                  <TeacherQuizListPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/teacher/quizzes/create"
+              element={
+                role === "teacher" ? (
+                  <TeacherCreateQuizPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route //
+              path="/teacher/quizzes/:id/results" 
+              element={
+                role === "teacher" ? (
+                  <TeacherQuizResultPage /> 
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/teacher/quizzes/:id/edit"
+              element={
+                role === "teacher" ? (
+                  <TeacherQuizEditPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="teacher/quizzes/:id"
+              element={
+                role === "teacher" ? (
+                  <TeacherQuizDetailPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Tasks — teachers see their own, admins/principals see all. Students denied. */}
             <Route
               path="/tasks"
-              element={<DenyRole deniedRoles={STUDENT_DENIED}><TasksListPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={STUDENT_DENIED}>
+                  <TasksListPage />
+                </DenyRole>
+              }
             />
             <Route
               path="/tasks/create"
-              element={<DenyRole deniedRoles={[...TEACHER_DENIED, ...STUDENT_DENIED]}><CreateTaskPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={[...TEACHER_DENIED, ...STUDENT_DENIED]}>
+                  <CreateTaskPage />
+                </DenyRole>
+              }
             />
             <Route
               path="/tasks/:taskId"
-              element={<DenyRole deniedRoles={STUDENT_DENIED}><TaskDetailPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={STUDENT_DENIED}>
+                  <TaskDetailPage />
+                </DenyRole>
+              }
             />
 
             {/* Leave — all roles */}
             <Route path="/leave" element={<LeaveListPage />} />
             <Route path="/leave/apply" element={<LeaveApplicationPage />} />
-            <Route path="/leave/:leaveId/proxy" element={<ProxyAssignmentPage />} />
+            <Route
+              path="/leave/:leaveId/proxy"
+              element={<ProxyAssignmentPage />}
+            />
 
             {/* Reports — restricted to non-teacher roles */}
             <Route
               path="/reports"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><ReportsPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={TEACHER_DENIED}>
+                  <ReportsPage />
+                </DenyRole>
+              }
             />
 
             {/* Settings — restricted to non-teacher roles */}
             <Route
               path="/academic-years"
-              element={<DenyRole deniedRoles={TEACHER_DENIED}><AcademicYearsPage /></DenyRole>}
+              element={
+                <DenyRole deniedRoles={TEACHER_DENIED}>
+                  <AcademicYearsPage />
+                </DenyRole>
+              }
             />
 
             {/* Feedback — only Principal and Teacher */}
             <Route
               path="/feedback"
               element={
-                role === 'principal' ? (
+                role === "principal" ? (
                   <PrincipalFeedbackPage />
-                ) : role === 'teacher' ? (
+                ) : role === "teacher" ? (
                   <TeacherFeedbackPage />
                 ) : (
                   <Navigate to="/" replace />
@@ -181,48 +441,174 @@ export default function AppRouter() {
             {/* Student-only routes */}
             <Route
               path="/student/circulars"
-              element={role === 'student' ? <StudentCircularsPage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentCircularsPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/mailbox"
-              element={role === 'student' ? <StudentMailboxPage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentMailboxPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/student/quizzes"
+              element={
+                role === "student" ? (
+                  <StudentQuizListPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/student/quizzes/:id/result"
+              element={
+                role === "student" ? (
+                  <StudentQuizResultPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/student/quizzes/:id"
+              element={
+                role === "student" ? (
+                  <StudentQuizAttemptPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/attendance"
-              element={role === 'student' ? <StudentAttendancePage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentAttendancePage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/achievements"
-              element={role === 'student' ? <StudentAchievementsPage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentAchievementsPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/leave"
-              element={role === 'student' ? <StudentLeavePage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentLeavePage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/homework"
-              element={role === 'student' ? <StudentHomeworkPage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentHomeworkPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
             <Route
               path="/student/homework/:assignmentId"
-              element={role === 'student' ? <StudentHomeworkDetailPage /> : <Navigate to="/" replace />}
+              element={
+                role === "student" ? (
+                  <StudentHomeworkDetailPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
             />
 
             {/* Reports */}
-            <Route path="/reports" element={['admin', 'principal', 'coordinator'].includes(role) ? <ReportsPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/reports"
+              element={
+                ["admin", "principal", "coordinator"].includes(role) ? (
+                  <ReportsPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Circulars Management */}
-            <Route path="/circulars" element={['admin', 'principal'].includes(role) ? <CircularManagementPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/circulars"
+              element={
+                ["admin", "principal"].includes(role) ? (
+                  <CircularManagementPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Mailbox Management */}
-            <Route path="/mailbox" element={['admin', 'principal'].includes(role) ? <MailboxManagementPage /> : <Navigate to="/" replace />} />
-            <Route path="/teacher/mailbox" element={role === 'teacher' ? <TeacherMailboxPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/mailbox"
+              element={
+                ["admin", "principal"].includes(role) ? (
+                  <MailboxManagementPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/teacher/mailbox"
+              element={
+                role === "teacher" ? (
+                  <TeacherMailboxPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Achievement Management */}
-            <Route path="/achievements" element={['admin', 'principal'].includes(role) ? <AchievementManagementPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/achievements"
+              element={
+                ["admin", "principal"].includes(role) ? (
+                  <AchievementManagementPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Attendance Marking */}
-            <Route path="/attendance/mark" element={['admin', 'principal', 'teacher'].includes(role) ? <AttendanceMarkingPage /> : <Navigate to="/" replace />} />
+            <Route
+              path="/attendance/mark"
+              element={
+                ["admin", "principal", "teacher"].includes(role) ? (
+                  <AttendanceMarkingPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
 
             {/* Profile — all roles */}
             <Route path="/profile" element={<ProfilePage />} />

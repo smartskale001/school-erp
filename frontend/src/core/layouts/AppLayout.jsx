@@ -166,6 +166,7 @@ export default function AppLayout({ children }) {
               items: [
                 { label: "Timetable", icon: CalendarDays, path: "/timetable" },
                 { label: "Homework", icon: NotebookPen, path: "/student/homework" },
+                { label: "Quizzes", icon: ClipboardCheck, path: "/student/quizzes" },
                 { label: "Circulars", icon: Megaphone, path: "/student/circulars" },
                 { label: "Mailbox", icon: Mail, path: "/student/mailbox" },
                 { label: "Attendance", icon: ClipboardCheck, path: "/student/attendance" },
